@@ -1,0 +1,737 @@
+/* ================================
+   ESTRUCTURA GENERAL
+================================ */
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+/* ================================
+   ENCABEZADO Y BARRA SUPERIOR
+================================ */
+header {
+  background-color: #f2f2f2;
+  padding: 10px;
+}
+
+.bloque-buscador {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  flex-wrap: nowrap;
+}
+
+.logo {
+  margin-left: 20px;
+  flex-shrink: 0;
+}
+
+.logo img {
+  height: 70px;
+  max-width: 90px;
+}
+
+/* ================================
+   NAVEGACIÓN PRINCIPAL
+================================ */
+nav {
+  background-color: #e63535;
+  padding: 10px;
+  margin-top: 10px;
+}
+
+.barra-navegacion {
+  list-style: none;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 1rem;
+  padding: 0;
+  gap: 1rem;
+}
+
+.barra-navegacion li {
+  margin: 0 100px;
+}
+
+.barra-navegacion a {
+  text-decoration: none;
+  color: white;
+  font-weight: bold;
+  padding: 8px 16px;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+}
+
+.barra-navegacion a.active {
+  background-color: rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(4px);
+  box-shadow: 0 0 10px rgba(255,255,255,0.2);
+}
+
+/* ================================
+   BUSCADOR
+================================ */
+.buscador {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  flex: 1;
+}
+
+.buscador input {
+  text-align: center;
+  width: 600px;
+  padding: 5px;
+}
+
+.buscador button,
+.boton-ingresar button {
+  padding: 5px 25px;
+  font-size: 14px;
+}
+
+.boton-ingresar button {
+  padding: 5px 30px;
+  flex-shrink: 0;
+}
+
+/* ================================
+   CONTENIDO GENERAL
+================================ */
+main {
+  padding: 20px;
+}
+
+main h2 {
+  text-align: center;
+}
+
+.programada {
+  margin-bottom: 40px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+/* ================================
+   PAGINA DE CARGA
+================================ */
+
+.login-success {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 80vh;
+}
+
+.loader-container {
+  text-align: center;
+}
+
+.loader-gif {
+  width: 80px;
+  margin-bottom: 15px;
+}
+
+/* ================================
+   LISTADO DE CARTAS
+================================ */
+.cartas {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 30px;
+  padding: 20px;
+  justify-items: center;
+}
+
+.bloque-carta {
+  display: flex;
+  align-items: center;
+  border: 1px solid #ccc;
+  background-color: #fff;
+  padding: 25px;
+  width: 80%;
+  max-width: 650px;
+  min-height: 220px;
+  box-sizing: border-box;
+  position: relative;
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+.carta-img img {
+  width: 160px;
+  height: auto;
+  object-fit: cover;
+  margin-right: 20px;
+  border-radius: 6px;
+}
+
+.info-carta {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  flex: 1;
+  position: relative;
+  text-align: center;
+}
+
+.tipo-tcg {
+  color: #888;
+  font-size: 14px;
+  text-align: center;
+}
+
+.nombre-carta {
+  font-weight: bold;
+  font-size: 20px;
+  color: #000;
+  margin-top: 5px;
+}
+
+.descripcion-carta {
+  color: #666;
+  font-size: 14px;
+  margin-top: 5px;
+}
+
+/* ================================
+   BLOQUES DE PROMOCIÓN
+================================ */
+.bloque-promos {
+  display: flex;
+  justify-content: center;
+  gap: 30px;
+  flex-wrap: wrap;
+  padding: 20px;
+}
+
+.bloque-promos .bloque-carta {
+  width: 45%;
+  max-width: none;
+}
+
+.bloque-promos .carta-img img {
+  width: 350px;
+  height: 200px;
+}
+
+/* ================================
+   BLOQUES DE CATEGORÍAS
+================================ */
+.bloque-carta-categorias {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+}
+
+.bloque-carta-categorias .carta-img {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  padding: 10px;
+  box-sizing: border-box;
+  width: auto;
+  height: auto;
+}
+
+.logo-juego {
+  max-width: 100%;
+  height: auto;
+  object-fit: contain;
+  display: block;
+}
+
+.opcion-click {
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.opcion-click:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+/* ================================
+   ESTILOS BASE CATEGORIA
+================================ */
+
+.bg-categoria {
+  position: relative;
+  overflow: hidden;
+  color: white;
+}
+
+
+.bg-categoria::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+
+  background-size: cover;
+  background-position: center;
+
+  filter: blur(2px);
+  transform: scale(1.1);
+
+  z-index: 0;
+}
+
+
+.bg-categoria::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-color: rgba(0,0,0,0.4);
+  z-index: 1;
+}
+
+
+.bg-categoria .info-carta {
+  position: relative;
+  z-index: 2;
+}
+
+/* ================================
+   VARIANTES  
+================================ */
+
+.bg-pokemon::before {
+  background-image: url("/pokemon-bg.jpg");
+}
+
+.bg-especiales::before {
+  background-image: url("/especiales-bg.jpg");
+}
+
+.bg-entrenador::before {
+  background-image: url("/entrenador-bg.jpg");
+}
+
+.bg-energia::before {
+  background-image: url("/energia-bg.jpg");
+}
+
+/* ================================
+   PERFIL 
+================================ */
+.perfil-container {
+  position: relative;
+}
+
+.perfil-btn {
+  display: flex;             
+  align-items: center;      
+  gap: 8px;                 
+  padding: 6px 15px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.perfil-img {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block; 
+}
+
+.perfil-dropdown {
+  position: absolute;
+  right: 0;
+  top: 50px;
+  background: white;
+  border: 1px solid #ccc;
+  display: flex;
+  flex-direction: column;
+  min-width: 180px;
+  z-index: 100;
+  overflow: hidden; 
+}
+
+.perfil-dropdown a {
+  padding: 10px;
+  text-decoration: none;
+  color: black;
+}
+
+.perfil-dropdown a,
+.logout-btn {
+  display: block;
+  width: 100%;
+  padding: 10px;
+  background-color: white;
+  text-decoration: none;
+  color: black;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+}
+
+.perfil-dropdown a:hover,
+.logout-btn:hover {
+  background-color: #f2f2f2;
+}
+/* ================================
+   BLOQUES DE OFERTA
+================================ */
+.precio-oferta {
+  display: flex;
+  flex-direction: column;
+  margin-top: 15px;
+  font-weight: bold;
+  color: #222;
+  font-size: 16px;
+}
+
+.precio-oferta .etiqueta {
+  font-size: 14px;
+  color: #555;
+}
+
+.precio-oferta .valor {
+  font-size: 18px;
+  color: #29c909;
+  margin-top: 5px;
+}
+
+.tiempo-oferta {
+  margin-top: 50px;
+  font-size: 12px;
+  color: #000;
+  text-align: center;
+}
+
+/* ================================
+   SECCIÓN DE CONTACTO / BASE
+================================ */
+.zona-contacto {
+  display: flex;
+  justify-content: center;
+  gap: 40px;
+  flex-wrap: wrap;
+  padding: 40px 20px;
+}
+
+/* ================================
+   LOGIN (ESPECÍFICO)
+================================ */
+.login-page {
+  position: relative;
+  min-height: 100vh;
+
+  background-image: url("/login-bg.jpg");
+  background-size: cover;
+  background-position: center;
+}
+
+
+.login-page::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-color: rgba(0,0,0,0.5);
+  z-index: 0;
+}
+
+/* ================================
+   INFO CONTACTO
+================================ */
+.info-contacto {
+  max-width: 600px;
+  margin: 1 auto 40px auto;
+  padding: 20px;
+  border-radius: 8px;
+  color: #333;
+}
+
+.info-contacto h3 {
+  font-size: 40px;
+  font-weight: bold;
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+.info-contacto h3 span {
+  color: #c00;
+}
+
+.info-contacto p {
+  font-size: 16px;
+  line-height: 2;
+  margin-bottom: 150px;
+  text-align: center;
+}
+
+/* ================================
+   FORMULARIOS (BASE)
+================================ */
+.formulario-contacto {
+  width: 430px;
+  padding: 20px;
+  background-color: rgba(255,255,255,0.9);
+  border: 2px solid #000;
+  border-radius: 0;
+  color: #333;
+  text-align: center;
+
+  position: relative; 
+  z-index: 1;
+}
+
+.formulario-contacto h4 {
+  font-size: 15px;
+  text-align: left;
+}
+
+.formulario-contacto h5 {
+  font-size: 10px;
+  text-align: left;
+}
+
+.formulario-contacto input,
+.formulario-contacto textarea {
+  width: 95%;
+  padding: 10px;
+  margin-bottom: 15px;
+  border: 1px solid #000;
+  border-radius: 4px;
+}
+
+/* SOLO LOGIN */
+.login-page .formulario-contacto {
+  color: black;
+  width: 450px;
+  padding: 30px;
+  border-radius: 12px; 
+  border: 1px solid rgba(255,255,255,0.3);
+  background: rgba(255, 255, 255, 0.2); /* 👈 más transparente */
+  backdrop-filter: blur(10px);          /* 👈 efecto blur */
+  -webkit-backdrop-filter: blur(10px);  /* 👈 compatibilidad */
+  box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+}
+/* ================================
+   BOTONES
+================================ */
+.btn-enviar,
+.btn-regresar {
+  display: block;
+  margin-top: 20px;
+  width: 100%;
+  padding: 12px 0;
+  font-size: 15px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.btn-enviar {
+  background-color: #d31414;
+  border: 1px solid #000;
+  color: #fff;
+}
+
+.btn-regresar {
+  background-color: #555;
+  border: 1px solid #000;
+  color: #fff;
+}
+
+.btn-secundario {
+  display: block;
+  margin-top: 20px;
+  width: 100%;
+  padding: 12px 0;
+  font-size: 15px;
+  border-radius: 10px;
+  cursor: pointer;
+
+  background-color: #555;
+  border: 1px solid #000;
+  color: #fff;
+}
+
+.btn-google {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 15px;
+  width: 100%;
+  padding: 12px 0;
+  font-size: 15px;
+  background-color: #ffffff;
+  border: 1px solid black;
+   border-radius: 10px;
+  color: black;
+  cursor: pointer;
+}
+
+.google-icon {
+  width: 50px;
+  height: auto;
+}
+
+/* ================================
+   BOTÓN VOLVER A CATEGORÍAS
+================================ */
+.btn-volver {
+  margin: 20px 0;
+  margin-left: 60px;
+  display: block;
+  padding: 10px 20px;
+  background-color: #e63535;
+  color: white;
+  border: none;
+  font-weight: bold;
+  font-size: 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  text-align: center;
+}
+
+/* ================================
+   MENSAJES DE FORMULARIO
+================================ */
+.mensaje-formulario {
+  display: none;
+  margin-bottom: 15px;
+  padding: 10px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: bold;
+  text-align: center;
+}
+
+.mensaje-error {
+  background-color: #ffe0e0;
+  color: #d8000c;
+  border: 1px solid #d8000c;
+}
+
+.mensaje-exito {
+  background-color: #e0ffe0;
+  color: #007700;
+  border: 1px solid #007700;
+}
+
+/* ================================
+   PIE DE PÁGINA
+================================ */
+.footer {
+  background-color: #f2f2f2;
+  padding: 30px 20px;
+  border-top: 1px solid #ccc;
+  text-align: center;
+  font-size: 14px;
+  color: #333;
+}
+
+.footer-contenido {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.footer-enlaces {
+  list-style: none;
+  padding: 0;
+  margin: 15px 0;
+  display: flex;
+  justify-content: center;
+  gap: 40px;
+}
+
+.footer-enlaces a {
+  text-decoration: none;
+  color: #e63535;
+  font-weight: bold;
+}
+
+.footer-redes {
+  margin-top: 10px;
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+}
+
+.footer-redes a {
+  text-decoration: none;
+  color: #555;
+  font-size: 14px;
+}
+
+/* ================================
+   SPINNER PARA BUSQUEDA
+================================ */
+
+.spinner-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin: 20px 0;
+}
+
+.spinner {
+  border: 6px solid #f3f3f3;
+  border-top: 6px solid #3498db; 
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  animation: spin 1s linear infinite;
+  margin: 40px auto;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* ================================
+   MENSAJE DE CARGA
+================================ */
+
+.cargando {
+  text-align: center;
+  font-size: 20px;
+  font-weight: bold;
+  margin: 20px 0;
+}
+
+/* ================================
+   PAGINACION CATEGORIAS
+================================ */
+
+.paginacion-container {
+  display: flex;
+  justify-content: center; 
+  align-items: center;
+  gap: 15px;
+  margin: 30px 0;
+  font-size: 15px;
+}
+
+.paginacion-btn {
+  padding: 8px 14px;
+  background-color: #e2e2e2;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.paginacion-btn:hover {
+  background-color: #d4d4d4;
+}
+
+.paginacion-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
