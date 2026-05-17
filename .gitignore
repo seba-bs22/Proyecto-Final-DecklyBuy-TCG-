@@ -1,0 +1,35 @@
+# ================================
+# Python / IA
+# ================================
+Producto/DecklyBuy-IA/venv/
+Producto/DecklyBuy-IA/uploads/
+Producto/DecklyBuy-IA/runs/
+Producto/DecklyBuy-IA/__pycache__/
+Producto/DecklyBuy-IA/*.pt
+
+# ================================
+# Node / Frontend
+# ================================
+**/node_modules/
+**/dist/
+**/.vite/
+
+# ================================
+# Java / Spring Boot Backend
+# ================================
+**/target/
+
+# ================================
+# Variables de entorno
+# ================================
+.env
+.env.local
+*.env
+
+# ================================
+# Sistema operativo / editor
+# ================================
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
