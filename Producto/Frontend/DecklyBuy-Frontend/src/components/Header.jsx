@@ -64,7 +64,7 @@ const Header = () => {
           {open && (
             <div className="perfil-dropdown">
               <Link to="/account">Mi cuenta</Link>
-              <Link to="/posts">Mis publicaciones</Link>
+              <Link to="/create-post">Crear publicación</Link>
               <button onClick={handleLogout} className="logout-btn">
                 Cerrar sesión
               </button>
