@@ -29,7 +29,15 @@ public class SecurityConfig {
 
             // Rutas públicas y protegidas
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/", "/login**", "/error").permitAll()
+                .requestMatchers(
+                    "/",
+                    "/login**",
+                    "/error",
+                    "/swagger-ui/**",
+                    "/swagger-ui.html",
+                    "/v3/api-docs/**",
+                    "/api/ia/**"
+                ).permitAll()
                 .anyRequest().authenticated()
             )
 

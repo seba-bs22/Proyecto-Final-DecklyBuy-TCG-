@@ -23,7 +23,7 @@ const CreatePost = () => {
     setSelectedImage(file);
     setImagePreview(URL.createObjectURL(file));
 
-    // Si cambia la imagen, limpiamos análisis anterior
+    // limpiar al cambiar imagen
     setAnalysisResult(null);
   };
 
@@ -47,18 +47,16 @@ const CreatePost = () => {
 
     setAnalyzing(true);
 
-    /*
-      De momento esto es simulado.
-      Luego aquí se conectará con Spring Boot, y Spring Boot llamará a la IA.
-    */
-    setTimeout(() => {
-      const result = {
-        valid: true,
-        estado: "Lightly Played",
-        score: 7.0,
-        confidence: "85%",
-        mensaje: "Carta TCG analizada correctamente."
-      };
+    try {
+      const data = new FormData();
+      data.append("file", selectedImage);
+
+      const response = await fetch("http://localhost:8080/api/ia/detect-score", {
+        method: "POST",
+        body: data
+      });
+
+      const result = await response.json();
 
       if (result.valid) {
         setAnalysisResult(result);
@@ -71,8 +69,18 @@ const CreatePost = () => {
         mensaje: result.mensaje
       });
 
+    } catch (error) {
+      console.error("Error al analizar imagen:", error);
+
+      setAnalysisResult(null);
+
+      setModal({
+        valid: false,
+        mensaje: "No se pudo conectar con el servicio de análisis. Intenta nuevamente."
+      });
+    } finally {
       setAnalyzing(false);
-    }, 1200);
+    }
   };
 
   const handlePublish = () => {
