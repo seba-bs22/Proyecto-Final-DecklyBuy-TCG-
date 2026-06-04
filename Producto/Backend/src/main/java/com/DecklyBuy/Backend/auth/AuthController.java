@@ -4,7 +4,11 @@ import com.DecklyBuy.Backend.users.User;
 import com.DecklyBuy.Backend.users.UserRepository;
 import com.DecklyBuy.Backend.users.UserResponse;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
+
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
@@ -96,7 +100,10 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginRequest request) {
+    public ResponseEntity<?> login(
+            @RequestBody LoginRequest request,
+            HttpServletRequest httpRequest
+    ) {
 
         if (isBlank(request.getEmail()) || isBlank(request.getPassword())) {
             return ResponseEntity.badRequest().body(
@@ -132,6 +139,9 @@ public class AuthController {
                         );
                     }
 
+                    HttpSession session = httpRequest.getSession(true);
+                    session.setAttribute("AUTH_USER_ID", user.getId());
+
                     return ResponseEntity.ok(
                             new AuthResponse(
                                     "Login correcto.",
@@ -142,6 +152,44 @@ public class AuthController {
                 .orElseGet(() -> ResponseEntity.status(401).body(
                         Map.of("message", "Correo o contraseña incorrectos.")
                 ));
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<?> getCurrentUser(HttpServletRequest request) {
+        HttpSession session = request.getSession(false);
+
+        if (session == null || session.getAttribute("AUTH_USER_ID") == null) {
+            return ResponseEntity.status(401).body(
+                    Map.of("message", "No hay sesión activa.")
+            );
+        }
+
+        UUID userId = (UUID) session.getAttribute("AUTH_USER_ID");
+
+        User user = userRepository.findById(userId).orElse(null);
+
+        if (user == null) {
+            return ResponseEntity.status(404).body(
+                    Map.of("message", "Usuario no encontrado.")
+            );
+        }
+
+        return ResponseEntity.ok(new UserResponse(user));
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout(HttpServletRequest request) {
+        HttpSession session = request.getSession(false);
+
+        if (session != null) {
+            session.invalidate();
+        }
+
+        SecurityContextHolder.clearContext();
+
+        return ResponseEntity.ok(
+                Map.of("message", "Sesión cerrada correctamente.")
+        );
     }
 
     private boolean isBlank(String value) {

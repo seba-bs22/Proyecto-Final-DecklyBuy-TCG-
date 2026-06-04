@@ -2,9 +2,9 @@ package com.DecklyBuy.Backend.config;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-import java.util.Map;
 
+import com.DecklyBuy.Backend.auth.GoogleAuthService;
+import com.DecklyBuy.Backend.users.UserResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.springframework.context.annotation.Bean;
@@ -20,8 +20,16 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+
 @Configuration
 public class SecurityConfig {
+
+    private final GoogleAuthService googleAuthService;
+
+    public SecurityConfig(GoogleAuthService googleAuthService) {
+        this.googleAuthService = googleAuthService;
+    }
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -52,21 +60,19 @@ public class SecurityConfig {
 
                     var oauthUser = (org.springframework.security.oauth2.core.user.OAuth2User) authentication.getPrincipal();
 
-                    String name = oauthUser.getAttribute("name");
-                    String email = oauthUser.getAttribute("email");
-                    String picture = oauthUser.getAttribute("picture");
+                    //Crear o actualizar usuario Google
+                    UserResponse userResponse = googleAuthService.processGoogleUser(oauthUser);
 
-                    // Crear objeto
-                    Map<String, String> userData = new HashMap<>();
-                    userData.put("name", name);
-                    userData.put("email", email);
-                    userData.put("picture", picture);
+                    //Guardar sesion
+                    request.getSession(true).setAttribute("AUTH_USER_ID", userResponse.getId());
 
-                    // Convertir a JSON 
+                    // Convertir usuario a JSON
                     ObjectMapper mapper = new ObjectMapper();
-                    String json = mapper.writeValueAsString(userData);
+                    mapper.registerModule(new JavaTimeModule());
 
-                    // Redirigir al frontend con datos
+                    String json = mapper.writeValueAsString(userResponse);
+
+                    // Redirigir al frontend 
                     String redirectUrl = "http://localhost:5173/login-success?user=" +
                             URLEncoder.encode(json, StandardCharsets.UTF_8);
 
