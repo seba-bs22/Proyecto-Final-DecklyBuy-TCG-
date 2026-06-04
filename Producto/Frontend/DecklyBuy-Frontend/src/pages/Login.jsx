@@ -7,13 +7,42 @@ const Login = () => {
 
   const navigate = useNavigate();
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (!email || !password) {
       alert("Completa todos los campos");
       return;
     }
 
-    console.log("Login:", { email, password });
+    try {
+      const response = await fetch("http://localhost:8080/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          email: email,
+          password: password
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        alert(data.message || "Error al iniciar sesión");
+        return;
+      }
+
+      // Guardar usuario local en localStorage
+      localStorage.setItem("user", JSON.stringify(data.user));
+
+      // Redirigir a home
+      navigate("/home");
+
+    } catch (error) {
+      console.error("Error en login:", error);
+      alert("No se pudo conectar con el servidor");
+    }
   };
 
   const handleGoogleLogin = () => {
@@ -47,7 +76,6 @@ const Login = () => {
           INGRESAR
         </button>
 
-
         <button className="btn-google" onClick={handleGoogleLogin}>
           <img src="/google-logo.png" alt="Google" className="google-icon" />
           Iniciar sesión con Google
@@ -55,8 +83,7 @@ const Login = () => {
 
         <button
           className="btn-secundario"
-          style={{ marginTop: "20px" }}
-          onClick={() => navigate("/home")}
+          onClick={() => navigate("/register")}
         >
           REGISTRARSE
         </button>

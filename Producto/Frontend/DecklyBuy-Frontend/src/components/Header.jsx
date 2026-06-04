@@ -5,11 +5,20 @@ const Header = () => {
   const [open, setOpen] = useState(false);
   const menuRef = useRef(null);
   const navigate = useNavigate();
-  const location = useLocation(); // 👈 clave
+  const location = useLocation();
 
   const storedUser = JSON.parse(localStorage.getItem("user"));
-  const userName = storedUser?.name || "Invitado";
-  const userImage = storedUser?.picture || "/user.png";
+
+  const userName =
+    storedUser?.nombreUsuario ||
+    storedUser?.nombre ||
+    storedUser?.name ||
+    "Invitado";
+
+  const userImage =
+    storedUser?.fotoPerfil ||
+    storedUser?.picture ||
+    "/user.png";
 
   // cerrar al hacer click fuera
   useEffect(() => {
@@ -23,10 +32,19 @@ const Header = () => {
     return () => document.removeEventListener("click", handleClickOutside);
   }, []);
 
-  // logout simple
-  const handleLogout = () => {
+  // logout 
+  const handleLogout = async () => {
+    try {
+      await fetch("http://localhost:8080/api/auth/logout", {
+        method: "POST",
+        credentials: "include"
+      });
+    } catch (error) {
+      console.error("Error cerrando sesión en backend:", error);
+    }
+
     localStorage.removeItem("user");
-    navigate("/login");
+    navigate("/login", { replace: true });
   };
 
   return (
@@ -63,7 +81,7 @@ const Header = () => {
 
           {open && (
             <div className="perfil-dropdown">
-              <Link to="/account">Mi cuenta</Link>
+              <Link to="/account">Ver mi perfil</Link>
               <Link to="/create-post">Crear publicación</Link>
               <button onClick={handleLogout} className="logout-btn">
                 Cerrar sesión
