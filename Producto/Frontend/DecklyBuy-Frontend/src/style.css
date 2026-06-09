@@ -122,7 +122,6 @@ main h2 {
 /* ================================
    PAGINA DE CARGA
 ================================ */
-
 .login-success {
   display: flex;
   justify-content: center;
@@ -262,7 +261,6 @@ main h2 {
 /* ================================
    CREAR PUBLICACIÓN
 ================================ */
-
 .crear-publicacion-page {
   padding: 30px 20px;
 }
@@ -377,7 +375,6 @@ main h2 {
 /* ================================
    RESULTADO IA - CREAR PUBLICACIÓN
 ================================ */
-
 .separador-analisis {
   width: 100%;
   margin: 25px 0 10px 0;
@@ -394,7 +391,6 @@ main h2 {
 /* ================================
    MODAL ANÁLISIS IA
 ================================ */
-
 .modal-analisis {
   position: fixed;
   inset: 0;
@@ -452,65 +448,6 @@ main h2 {
 .btn-analizar-imagen:disabled {
   opacity: 0.6;
   cursor: not-allowed;
-}
-/* ================================
-   ESTILOS BASE CATEGORIA
-================================ */
-
-.bg-categoria {
-  position: relative;
-  overflow: hidden;
-  color: white;
-}
-
-
-.bg-categoria::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-
-  background-size: cover;
-  background-position: center;
-
-  filter: blur(2px);
-  transform: scale(1.1);
-
-  z-index: 0;
-}
-
-
-.bg-categoria::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background-color: rgba(0,0,0,0.4);
-  z-index: 1;
-}
-
-
-.bg-categoria .info-carta {
-  position: relative;
-  z-index: 2;
-}
-
-/* ================================
-   VARIANTES  
-================================ */
-
-.bg-pokemon::before {
-  background-image: url("/pokemon-bg.jpg");
-}
-
-.bg-especiales::before {
-  background-image: url("/especiales-bg.jpg");
-}
-
-.bg-entrenador::before {
-  background-image: url("/entrenador-bg.jpg");
-}
-
-.bg-energia::before {
-  background-image: url("/energia-bg.jpg");
 }
 
 /* ================================
@@ -578,7 +515,6 @@ main h2 {
 /* ================================
    Edit PERFIL
 ================================ */
-
 .perfil-formulario {
   max-width: 520px;
 }
@@ -650,80 +586,74 @@ main h2 {
 .zona-contacto {
   display: flex;
   justify-content: center;
+  align-items: center; /* centrado vertical */
+  min-height: 100vh;   /* ocupa toda la pantalla */
   gap: 40px;
   flex-wrap: wrap;
   padding: 40px 20px;
+  position: relative;
 }
 
 /* ================================
-   LOGIN (ESPECÍFICO)
+   PÁGINAS DE AUTENTICACIÓN (UNIFICADAS)
 ================================ */
-.login-page {
+.auth-page {
   position: relative;
   min-height: 100vh;
-
-  background-image: url("/login-bg.jpg");
+  background-image: url("/login-bg.jpg"); /* fondo común */
   background-size: cover;
   background-position: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
-
-.login-page::before {
+.auth-page::before {
   content: "";
   position: absolute;
   inset: 0;
-  background-color: rgba(0,0,0,0.5);
+  background-color: rgba(0,0,0,0.5); /* overlay oscuro */
   z-index: 0;
 }
 
-.btn-register {
-  margin-top: 20px;
-}
-
-
-/* ================================
-   INFO CONTACTO
-================================ */
-.info-contacto {
-  max-width: 600px;
-  margin: 1 auto 40px auto;
-  padding: 20px;
-  border-radius: 8px;
-  color: #333;
-}
-
-.info-contacto h3 {
-  font-size: 40px;
-  font-weight: bold;
-  margin-bottom: 10px;
-  text-align: center;
-}
-
-.info-contacto h3 span {
-  color: #c00;
-}
-
-.info-contacto p {
-  font-size: 16px;
-  line-height: 2;
-  margin-bottom: 150px;
-  text-align: center;
+.auth-page .formulario-contacto {
+  width: 450px;
+  padding: 30px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.3);
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+  color: black;
+  position: relative;
+  z-index: 1;
+  height: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
 }
 
 /* ================================
    FORMULARIOS (BASE)
 ================================ */
 .formulario-contacto {
-  width: 430px;
-  padding: 20px;
-  background-color: rgba(255,255,255,0.9);
-  border: 2px solid #000;
-  border-radius: 0;
+  width: 450px;
+  padding: 30px;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255,255,255,0.3);
+  border-radius: 12px;
   color: #333;
   text-align: center;
-
-  position: relative; 
+  position: relative;
   z-index: 1;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+  height: auto;        /* adaptable */
+  display: flex;
+  flex-direction: column;
+  gap: 15px;           /* espaciado interno */
 }
 
 .formulario-contacto h4 {
@@ -752,11 +682,41 @@ main h2 {
   padding: 30px;
   border-radius: 12px; 
   border: 1px solid rgba(255,255,255,0.3);
-  background: rgba(255, 255, 255, 0.2); /* 👈 más transparente */
-  backdrop-filter: blur(10px);          /* 👈 efecto blur */
-  -webkit-backdrop-filter: blur(10px);  /* 👈 compatibilidad */
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+  min-height: 450px; /* 👈 login alto */
 }
+
+/* Forgot dentro de login-page */
+.login-page .formulario-contacto.forgot-box {
+  min-height: 280px; /* 👈 más corto */
+}
+
+/* Reset dentro de login-page */
+.login-page .formulario-contacto.reset-box {
+  min-height: 320px; /* 👈 ajusta según contenido */
+}
+
+/* ================================
+   RESTABLECER CONTRASEÑA (ENLACE LOGIN)
+================================ */
+.forgot-password {
+  text-align: right;
+  margin-top: 5px;
+}
+
+.forgot-password span {
+  color: red;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.forgot-password span:hover {
+  text-decoration: underline;
+}
+
 /* ================================
    BOTONES
 ================================ */
@@ -791,7 +751,6 @@ main h2 {
   font-size: 15px;
   border-radius: 10px;
   cursor: pointer;
-
   background-color: #555;
   border: 1px solid #000;
   color: #fff;
@@ -808,7 +767,7 @@ main h2 {
   font-size: 15px;
   background-color: #ffffff;
   border: 1px solid black;
-   border-radius: 10px;
+  border-radius: 10px;
   color: black;
   cursor: pointer;
 }
@@ -861,6 +820,18 @@ main h2 {
   border: 1px solid #007700;
 }
 
+.error-message {
+  color: #d8000c;
+  font-size: 0.9rem;
+  margin: 8px 0;
+}
+
+.success-message {
+  color: #007700;
+  font-size: 0.9rem;
+  margin: 8px 0;
+}
+
 /* ================================
    PIE DE PÁGINA
 ================================ */
@@ -909,7 +880,6 @@ main h2 {
 /* ================================
    SPINNER PARA BUSQUEDA
 ================================ */
-
 .spinner-container {
   display: flex;
   flex-direction: column;
@@ -936,7 +906,6 @@ main h2 {
 /* ================================
    MENSAJE DE CARGA
 ================================ */
-
 .cargando {
   text-align: center;
   font-size: 20px;
@@ -947,7 +916,6 @@ main h2 {
 /* ================================
    PAGINACION CATEGORIAS
 ================================ */
-
 .paginacion-container {
   display: flex;
   justify-content: center; 
