@@ -54,6 +54,12 @@ public class User {
     @Column(name = "fecha_actualizacion")
     private OffsetDateTime fechaActualizacion;
 
+    @Column(name = "reset_token")
+    private String resetToken;
+
+    @Column(name = "reset_token_expiry")
+    private OffsetDateTime resetTokenExpiry;
+
     public User() {
     }
 
@@ -117,6 +123,14 @@ public class User {
         return fechaActualizacion;
     }
 
+    public String getResetToken() {
+        return resetToken;
+    }
+
+    public OffsetDateTime getResetTokenExpiry() {
+        return resetTokenExpiry;
+    }
+
     public void setId(UUID id) {
         this.id = id;
     }
@@ -175,5 +189,12 @@ public class User {
 
     public void setFechaActualizacion(OffsetDateTime fechaActualizacion) {
         this.fechaActualizacion = fechaActualizacion;
+    }
+     public void setResetToken(String resetToken) {
+        this.resetToken = resetToken;
+    }
+
+    public void setResetTokenExpiry(OffsetDateTime resetTokenExpiry) {
+        this.resetTokenExpiry = resetTokenExpiry;
     }
 }
