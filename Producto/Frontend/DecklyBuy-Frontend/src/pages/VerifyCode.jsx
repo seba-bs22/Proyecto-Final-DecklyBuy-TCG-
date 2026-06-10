@@ -17,13 +17,14 @@ const VerifyCode = () => {
         body: JSON.stringify({ ...formData, code })
       });
 
-      const data = await response.json();
+      const data = await response.json().catch(() => null);
 
       if (!response.ok) {
-        setError(data.message || "Código inválido");
+        setError(data?.message || "Código inválido");
         return;
       }
 
+      // guardar usuario en localStorage
       localStorage.setItem("user", JSON.stringify(data.user));
       navigate("/home");
     } catch (err) {

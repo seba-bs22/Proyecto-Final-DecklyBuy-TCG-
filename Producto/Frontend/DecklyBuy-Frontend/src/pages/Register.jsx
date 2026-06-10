@@ -56,7 +56,6 @@ const Register = () => {
     setErrors({ ...errors, [name]: msg, backend: "" });
   };
 
-  // En vez de crear usuario directo, enviamos correo a /register-init
   const handleRegisterInit = async () => {
     const hasErrors = Object.values(errors).some((err) => err);
     if (hasErrors) return;
@@ -68,10 +67,10 @@ const Register = () => {
         body: JSON.stringify({ email: formData.email })
       });
 
-      const data = await response.json();
+      const data = await response.json().catch(() => null);
 
       if (!response.ok) {
-        setErrors({ ...errors, backend: data.message || "Error al crear una cuenta" });
+        setErrors({ ...errors, backend: data?.message || "Error al crear una cuenta" });
         return;
       }
 

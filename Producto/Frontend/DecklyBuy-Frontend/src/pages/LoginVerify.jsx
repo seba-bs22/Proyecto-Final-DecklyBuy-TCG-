@@ -14,13 +14,14 @@ const LoginVerify = () => {
       const response = await fetch("http://localhost:8080/api/auth/login-verify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...formData, code })
+        body: JSON.stringify({ ...formData, code }),
+        credentials: "include" // 🔑 esto asegura que se guarde la cookie JSESSIONID
       });
 
-      const data = await response.json();
+      const data = await response.json().catch(() => null);
 
       if (!response.ok) {
-        setError(data.message || "Código inválido");
+        setError(data?.message || "Código inválido");
         return;
       }
 

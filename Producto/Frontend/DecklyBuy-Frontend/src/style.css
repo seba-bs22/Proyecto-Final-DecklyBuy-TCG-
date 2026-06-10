@@ -832,6 +832,13 @@ main h2 {
   margin: 8px 0;
 }
 
+input[disabled],
+textarea[disabled] {
+  background-color: #e0e0e0; /* gris claro */
+  color: #666;              /* texto gris */
+  cursor: not-allowed;      /* cursor bloqueado */
+}
+
 /* ================================
    PIE DE PÁGINA
 ================================ */

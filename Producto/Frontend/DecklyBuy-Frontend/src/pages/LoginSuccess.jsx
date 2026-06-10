@@ -1,34 +1,24 @@
 import { useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 const LoginSuccess = () => {
   const navigate = useNavigate();
-  const location = useLocation();
 
   useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const userParam = params.get("user");
+    // Ya no necesitamos leer parámetros de la URL.
+    // El backend guarda la sesión y Home.jsx se encargará de obtener el usuario.
+    const timer = setTimeout(() => {
+      navigate("/home");
+    }, 2000);
 
-    if (userParam) {
-      const user = JSON.parse(decodeURIComponent(userParam));
-
-      // guardar usuario
-      localStorage.setItem("user", JSON.stringify(user));
-
-      // delay de 2 segundos antes de ir a home
-      setTimeout(() => {
-        navigate("/home");
-      }, 2000);
-    } else {
-      navigate("/login");
-    }
-  }, [location, navigate]);
+    return () => clearTimeout(timer);
+  }, [navigate]);
 
   return (
     <main className="login-success">
       <div className="loader-container">
         <img
-          src="/loading.gif" 
+          src="/loading.gif"
           alt="Cargando..."
           className="loader-gif"
         />

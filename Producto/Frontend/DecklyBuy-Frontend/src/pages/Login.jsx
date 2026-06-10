@@ -40,21 +40,21 @@ const Login = () => {
     if (emailError || passwordError) return;
 
     try {
-      // Nuevo endpoint: login-init
       const response = await fetch("http://localhost:8080/api/auth/login-init", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify({ email, password }),
+        credentials: "include" // 🔑 ahora sí se guarda la cookie JSESSIONID
       });
 
-      const data = await response.json();
+      const data = await response.json().catch(() => null);
 
       if (!response.ok) {
-        setBackendError(data.message || "Error al iniciar sesión");
+        setBackendError(data?.message || "Error al iniciar sesión");
         return;
       }
 
-      // Redirigir a la nueva página de verificación
+      // Redirigir a la página de verificación con los datos
       navigate("/login-verify", { state: { formData: { email, password } } });
     } catch (error) {
       console.error("Error en login:", error);
@@ -91,7 +91,6 @@ const Login = () => {
           onChange={handlePasswordChange}
         />
 
-        {/* Enlace de recuperación */}
         <div className="forgot-password">
           <span onClick={() => navigate("/forgot-password")}>
             ¿Olvidaste tu contraseña?

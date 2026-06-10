@@ -1,12 +1,8 @@
 package com.DecklyBuy.Backend.config;
 
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-
 import com.DecklyBuy.Backend.auth.GoogleAuthService;
 import com.DecklyBuy.Backend.users.UserResponse;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.DecklyBuy.Backend.users.UserDetailsServiceImpl;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -22,16 +18,19 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 public class SecurityConfig {
 
     private final GoogleAuthService googleAuthService;
+    private final UserDetailsServiceImpl userDetailsService;
 
-    public SecurityConfig(GoogleAuthService googleAuthService) {
+    public SecurityConfig(GoogleAuthService googleAuthService,
+                          UserDetailsServiceImpl userDetailsService) {
         this.googleAuthService = googleAuthService;
+        this.userDetailsService = userDetailsService;
     }
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(csrf -> csrf.disable()) // desactiva CSRF
-            .cors(Customizer.withDefaults()) // habilita CORS
+            .csrf(csrf -> csrf.disable())
+            .cors(Customizer.withDefaults())
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(
                     "/",
@@ -46,23 +45,37 @@ public class SecurityConfig {
                 ).permitAll()
                 .anyRequest().authenticated()
             )
+            // Login por formulario para usuarios de BD
+            .formLogin(form -> form
+                .loginPage("/login")
+                .permitAll()
+            )
+            // Login con Google
             .oauth2Login(oauth -> oauth
                 .successHandler((request, response, authentication) -> {
                     var oauthUser = (org.springframework.security.oauth2.core.user.OAuth2User) authentication.getPrincipal();
 
+                    // Procesar usuario de Google y guardarlo en BD si es necesario
                     UserResponse userResponse = googleAuthService.processGoogleUser(oauthUser);
 
+                    // Guardar en sesión el ID del usuario
                     request.getSession(true).setAttribute("AUTH_USER_ID", userResponse.getId());
 
-                    ObjectMapper mapper = new ObjectMapper();
-                    mapper.registerModule(new JavaTimeModule());
-                    String json = mapper.writeValueAsString(userResponse);
-
-                    String redirectUrl = "http://localhost:5173/login-success?user=" +
-                            URLEncoder.encode(json, StandardCharsets.UTF_8);
-
-                    response.sendRedirect(redirectUrl);
+                    // Redirigir directamente al frontend
+                    response.sendRedirect("http://localhost:5173/home");
                 })
+            )
+            // Remember-me conectado a UserDetailsServiceImpl
+            .rememberMe(remember -> remember
+                .alwaysRemember(true)
+                .tokenValiditySeconds(604800) // 7 días
+                .key("claveSecretaSuperSegura")
+                .userDetailsService(userDetailsService)
+            )
+            .logout(logout -> logout
+                .logoutUrl("/logout")
+                .deleteCookies("JSESSIONID", "remember-me")
+                .logoutSuccessUrl("/")
             );
 
         return http.build();

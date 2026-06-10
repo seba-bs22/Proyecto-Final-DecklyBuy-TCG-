@@ -2,51 +2,41 @@ import React, { useEffect, useState } from 'react';
 import Card from '../components/Card';
 
 const cartas = [
-  {
-    img: '/img/reshiram.jpg',
-    tipo: 'POKÉMON',
-    nombre: 'Reshiram',
-    descripcion: '(113/114) [Black & White: Base Set]'
-  },
-  {
-    img: '/img/charizard-ex.jpg',
-    tipo: 'POKÉMON',
-    nombre: 'Charizard EX',
-    descripcion: '(065/165) [Scarlet & Violet 151]'
-  },
-  {
-    img: '/img/charizard.jpg',
-    tipo: 'POKÉMON',
-    nombre: 'Charizard',
-    descripcion: '(4/102) [Base Set]'
-  }
+  { img: '/img/reshiram.jpg', tipo: 'POKÉMON', nombre: 'Reshiram', descripcion: '(113/114) [Black & White: Base Set]' },
+  { img: '/img/charizard-ex.jpg', tipo: 'POKÉMON', nombre: 'Charizard EX', descripcion: '(065/165) [Scarlet & Violet 151]' },
+  { img: '/img/charizard.jpg', tipo: 'POKÉMON', nombre: 'Charizard', descripcion: '(4/102) [Base Set]' }
 ];
 
 const Home = () => {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    fetch("http://localhost:8080/user", {
-      credentials: "include" // 🔥 clave para sesión
+    fetch("http://localhost:8080/api/auth/me", {
+      credentials: "include" // importante para enviar cookies de sesión
     })
-      .then(res => res.json())
-      .then(data => {
-        console.log("Usuario:", data);
-        setUser(data);
-
-        // guardar para el Header
-        localStorage.setItem("user", JSON.stringify(data));
+      .then(async res => {
+        const data = await res.json().catch(() => null);
+        if (!res.ok) {
+          throw new Error(data?.message || "No autenticado");
+        }
+        // siempre usar data.user
+        setUser(data.user);
+        if (data.user) {
+          localStorage.setItem("user", JSON.stringify(data.user));
+        }
       })
       .catch(err => console.error("Error obteniendo usuario:", err));
   }, []);
 
   return (
     <main>
-
-      {/* 👇 Mensaje dinámico */}
-      {user && (
+      {user ? (
         <section style={{ textAlign: "center", marginTop: "20px" }}>
-          <h2>Bienvenido, {user.name}</h2>
+          <h2>Bienvenido, {user.nombreUsuario || user.nombre}</h2>
+        </section>
+      ) : (
+        <section style={{ textAlign: "center", marginTop: "20px" }}>
+          <h2>No hay sesión activa, inicia sesión para continuar</h2>
         </section>
       )}
 

@@ -13,6 +13,7 @@ import LoginVerify from './pages/LoginVerify.jsx';
 import Register from './pages/Register.jsx';
 import VerifyCode from './pages/VerifyCode.jsx';   
 import CreatePost from './pages/CreatePost.jsx';
+import Posts from './pages/Posts.jsx';   // nueva página
 import LoginSuccess from './pages/LoginSuccess.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 import ForgotPassword from './pages/ForgotPassword.jsx';
@@ -41,6 +42,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
             <Route path="home" element={<Home />} />
             <Route path="categories" element={<Categories />} />
             <Route path="create-post" element={<CreatePost />} />
+            <Route path="posts" element={<Posts />} /> {/* nueva ruta */}
             <Route path="offers" element={<Offers />} />
             <Route path="contact" element={<Contact />} />
             <Route path="account" element={<Account />} />
