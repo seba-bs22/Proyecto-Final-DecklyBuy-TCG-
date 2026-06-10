@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { API_URL } from "../config/api";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -41,7 +42,7 @@ const Login = () => {
 
     try {
       // Nuevo endpoint: login-init
-      const response = await fetch("http://localhost:8080/api/auth/login-init", {
+      const response = await fetch(`${API_URL}/api/auth/login-init`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -108,8 +109,7 @@ const Login = () => {
         <button
           className="btn-google"
           onClick={() =>
-            (window.location.href =
-              "http://localhost:8080/oauth2/authorization/google")
+            (window.location.href = `${API_URL}/oauth2/authorization/google`)
           }
         >
           <img src="/google-logo.png" alt="Google" className="google-icon" />

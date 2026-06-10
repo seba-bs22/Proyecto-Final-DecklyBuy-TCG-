@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { API_URL } from "../config/api";
 
 const Account = () => {
   const navigate = useNavigate();
@@ -20,7 +21,7 @@ const Account = () => {
   useEffect(() => {
     const loadUser = async () => {
       try {
-        const response = await fetch("http://localhost:8080/api/auth/me", {
+        const response = await fetch(`${API_URL}/api/auth/me`, {
           method: "GET",
           credentials: "include"
         });
@@ -85,7 +86,7 @@ const Account = () => {
     }
 
     try {
-      const response = await fetch("http://localhost:8080/api/users/profile", {
+      const response = await fetch(`${API_URL}/api/users/profile`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json"

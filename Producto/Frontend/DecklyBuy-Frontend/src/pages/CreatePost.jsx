@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { API_URL } from "../config/api";
 
 const CreatePost = () => {
   const [imagePreview, setImagePreview] = useState(null);
@@ -51,7 +52,7 @@ const CreatePost = () => {
       const data = new FormData();
       data.append("file", selectedImage);
 
-      const response = await fetch("http://localhost:8080/api/ia/detect-score", {
+      const response = await fetch(`${API_URL}/api/ia/detect-score`, {
         method: "POST",
         body: data
       });
