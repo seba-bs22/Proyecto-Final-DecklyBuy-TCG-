@@ -1,5 +1,6 @@
 package com.DecklyBuy.Backend.ia;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.*;
 import org.springframework.util.LinkedMultiValueMap;
@@ -10,10 +11,12 @@ import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/ia")
-@CrossOrigin(origins = "http://localhost:5173")
 public class IaController {
 
     private final RestTemplate restTemplate = new RestTemplate();
+
+    @Value("${app.ia-url}")
+    private String iaBaseUrl;
 
     @PostMapping(
             value = "/detect-score",
@@ -21,7 +24,7 @@ public class IaController {
     )
     public ResponseEntity<IaResponse> detectScore(@RequestPart("file") MultipartFile file) {
         try {
-            String iaUrl = "http://localhost:5000/detect-score";
+            String iaUrl = iaBaseUrl + "/detect-score";
 
             ByteArrayResource fileResource = new ByteArrayResource(file.getBytes()) {
                 @Override

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import Card from '../components/Card';
+import { API_URL } from "../config/api";
 
 const cartas = [
   {
@@ -26,8 +27,8 @@ const Home = () => {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    fetch("http://localhost:8080/user", {
-      credentials: "include" // 🔥 clave para sesión
+    fetch(`${API_URL}/user`, {
+      credentials: "include"
     })
       .then(res => res.json())
       .then(data => {
@@ -43,7 +44,6 @@ const Home = () => {
   return (
     <main>
 
-      {/* 👇 Mensaje dinámico */}
       {user && (
         <section style={{ textAlign: "center", marginTop: "20px" }}>
           <h2>Bienvenido, {user.name}</h2>

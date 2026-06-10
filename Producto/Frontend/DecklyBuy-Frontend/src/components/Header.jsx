@@ -1,5 +1,6 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
+import { API_URL } from "../config/api";
 
 const Header = () => {
   const [open, setOpen] = useState(false);
@@ -35,7 +36,7 @@ const Header = () => {
   // logout 
   const handleLogout = async () => {
     try {
-      await fetch("http://localhost:8080/api/auth/logout", {
+      await fetch(`${API_URL}/api/auth/logout`, {
         method: "POST",
         credentials: "include"
       });

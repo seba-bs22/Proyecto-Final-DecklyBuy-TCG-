@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { API_URL } from "../config/api";
 
 const LoginVerify = () => {
   const navigate = useNavigate();
@@ -11,7 +12,7 @@ const LoginVerify = () => {
 
   const handleVerify = async () => {
     try {
-      const response = await fetch("http://localhost:8080/api/auth/login-verify", {
+      const response = await fetch(`${API_URL}/api/auth/login-verify`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
