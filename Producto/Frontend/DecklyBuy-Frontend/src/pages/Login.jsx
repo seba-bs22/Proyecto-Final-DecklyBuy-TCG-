@@ -44,6 +44,7 @@ const Login = () => {
       const response = await fetch("http://localhost:8080/api/auth/login-init", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ email, password })
       });
 

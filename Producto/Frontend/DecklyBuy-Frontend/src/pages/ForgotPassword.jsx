@@ -1,9 +1,12 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+
+  const navigate = useNavigate();
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -14,6 +17,7 @@ const ForgotPassword = () => {
       setError("El campo correo no puede quedar vacío");
       return;
     }
+    
     if (!emailRegex.test(email)) {
       setError("Debes ingresar un correo válido. Ejemplo: usuario@correo.com");
       return;
@@ -62,6 +66,14 @@ const ForgotPassword = () => {
 
           <button type="submit" className="btn-enviar">
             RECUPERAR
+          </button>
+
+          <button
+            type="button"
+            className="btn-secundario"
+            onClick={() => navigate("/login")}
+          >
+            VOLVER
           </button>
         </form>
       </div>

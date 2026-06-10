@@ -650,10 +650,10 @@ main h2 {
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   box-shadow: 0 8px 32px rgba(0,0,0,0.25);
-  height: auto;        /* adaptable */
+  height: auto;       
   display: flex;
   flex-direction: column;
-  gap: 15px;           /* espaciado interno */
+  gap: 15px;          
 }
 
 .formulario-contacto h4 {
@@ -686,17 +686,17 @@ main h2 {
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   box-shadow: 0 8px 32px rgba(0,0,0,0.25);
-  min-height: 450px; /* 👈 login alto */
+  min-height: 450px; 
 }
 
 /* Forgot dentro de login-page */
 .login-page .formulario-contacto.forgot-box {
-  min-height: 280px; /* 👈 más corto */
+  min-height: 280px;
 }
 
 /* Reset dentro de login-page */
 .login-page .formulario-contacto.reset-box {
-  min-height: 320px; /* 👈 ajusta según contenido */
+  min-height: 320px; 
 }
 
 /* ================================
@@ -941,4 +941,370 @@ main h2 {
 .paginacion-btn:disabled {
   cursor: not-allowed;
   opacity: 0.5;
+}
+
+/* =========================================================
+   CATEGORÍAS - FONDOS 
+========================================================= */
+
+.bloque-carta-categorias.bg-categoria,
+.bg-categoria {
+  position: relative;
+  overflow: hidden;
+  min-height: 260px;
+  color: white;
+  border-radius: 12px;
+  border: none;
+  background-color: #111;
+  justify-content: center;
+}
+
+.bg-categoria::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  filter: blur(3px);
+  transform: scale(1.1);
+  z-index: 0;
+}
+
+.bg-categoria::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.45);
+  z-index: 1;
+}
+
+.bg-categoria .info-carta {
+  position: relative;
+  z-index: 2;
+}
+
+.bg-categoria .info-carta h3 {
+  color: white;
+  font-size: 24px;
+  font-weight: bold;
+  text-align: center;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+}
+
+.bg-pokemon::before {
+  background-image: url("/pokemon-bg.jpg");
+}
+
+.bg-especiales::before {
+  background-image: url("/especiales-bg.jpg");
+}
+
+.bg-entrenador::before {
+  background-image: url("/entrenador-bg.jpg");
+}
+
+.bg-energia::before {
+  background-image: url("/energia-bg.jpg");
+}
+
+
+/* =========================================================
+   CONTACTO
+========================================================= */
+
+.zona-contacto {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 40px;
+  flex-wrap: wrap;
+  padding: 40px 20px;
+  overflow: hidden;
+  background: #f5f5f5;
+}
+
+.zona-contacto::before {
+  content: none;
+}
+
+.zona-contacto .info-contacto,
+.zona-contacto .formulario-contacto {
+  position: relative;
+  z-index: 1;
+}
+
+.zona-contacto .info-contacto {
+  max-width: 600px;
+  margin: 0;
+  padding: 20px;
+  border-radius: 8px;
+  color: #333;
+}
+
+.zona-contacto .info-contacto h3 {
+  font-size: 40px;
+  font-weight: bold;
+  margin-bottom: 10px;
+  text-align: center;
+  color: #333;
+}
+
+.zona-contacto .info-contacto h3 span {
+  color: #ff4d4d;
+}
+
+.zona-contacto .info-contacto p {
+  font-size: 16px;
+  line-height: 2;
+  margin-bottom: 150px;
+  text-align: center;
+  color: #333;
+}
+
+.zona-contacto .formulario-contacto {
+  width: 430px;
+  padding: 20px;
+  background-color: rgba(255, 255, 255, 0.92);
+  border: 2px solid #000;
+  border-radius: 0;
+  color: #333;
+  text-align: center;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  display: block;
+}
+
+.zona-contacto .formulario-contacto h1,
+.zona-contacto .formulario-contacto h4,
+.zona-contacto .formulario-contacto h5,
+.zona-contacto .formulario-contacto p {
+  color: #333;
+}
+
+.zona-contacto .formulario-contacto h4 {
+  font-size: 15px;
+  text-align: left;
+}
+
+.zona-contacto .formulario-contacto h5 {
+  font-size: 10px;
+  text-align: left;
+}
+
+.zona-contacto .formulario-contacto input,
+.zona-contacto .formulario-contacto textarea {
+  width: 95%;
+  padding: 10px;
+  margin-bottom: 15px;
+  border: 1px solid #000;
+  border-radius: 4px;
+}
+
+
+/* =========================================================
+   LOGIN / REGISTER / RECUPERACIÓN
+========================================================= */
+
+.login-page,
+.auth-page {
+  position: relative;
+  min-height: 100vh;
+  background-image: url("/login-bg.jpg");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.auth-page {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 30px 20px;
+}
+
+.login-page::before,
+.auth-page::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 0;
+}
+
+.login-page .formulario-contacto,
+.auth-page .formulario-contacto {
+  color: black;
+  width: 450px;
+  max-width: 95%;
+  padding: 30px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.login-page .formulario-contacto h1,
+.login-page .formulario-contacto h2,
+.login-page .formulario-contacto h3,
+.login-page .formulario-contacto h4,
+.login-page .formulario-contacto h5,
+.login-page .formulario-contacto p,
+.auth-page .formulario-contacto h1,
+.auth-page .formulario-contacto h2,
+.auth-page .formulario-contacto h3,
+.auth-page .formulario-contacto h4,
+.auth-page .formulario-contacto h5,
+.auth-page .formulario-contacto p {
+  color: black;
+}
+
+.login-page .formulario-contacto input,
+.auth-page .formulario-contacto input {
+  width: 95%;
+  padding: 10px;
+  border: 1px solid #000;
+  border-radius: 4px;
+}
+
+.login-page .formulario-contacto {
+  min-height: 450px;
+}
+
+.login-page .formulario-contacto.forgot-box,
+.auth-page .formulario-contacto.forgot-box {
+  min-height: 280px;
+}
+
+.login-page .formulario-contacto.reset-box,
+.auth-page .formulario-contacto.reset-box {
+  min-height: 320px;
+}
+
+.login-page .formulario-contacto.verify-box,
+.auth-page .formulario-contacto.verify-box {
+  min-height: 320px;
+}
+
+.forgot-password {
+  text-align: right;
+  margin-top: 5px;
+}
+
+.forgot-password span,
+.forgot-password a {
+  color: red;
+  cursor: pointer;
+  font-size: 0.9rem;
+  text-decoration: none;
+}
+
+.forgot-password span:hover,
+.forgot-password a:hover {
+  text-decoration: underline;
+}
+
+
+/* =========================================================
+   PERFIL
+========================================================= */
+
+.perfil-formulario {
+  max-width: 520px;
+}
+
+.perfil-foto-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 20px 0;
+}
+
+.perfil-foto-grande {
+  width: 130px;
+  height: 130px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #ddd;
+  background-color: #f5f5f5;
+}
+
+.perfil-foto-nota {
+  font-size: 13px;
+  color: #666;
+  margin-top: 10px;
+  text-align: center;
+}
+
+.perfil-botones {
+  display: flex;
+  gap: 15px;
+  margin-top: 25px;
+}
+
+.perfil-botones button {
+  flex: 1;
+}
+
+.input-readonly {
+  background-color: #f2f2f2;
+  color: #333;
+  cursor: not-allowed;
+}
+
+
+/* =========================================================
+   RESPONSIVE BÁSICO
+========================================================= */
+
+@media (max-width: 900px) {
+  .cartas {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .bloque-promos .bloque-carta {
+    width: 90%;
+  }
+
+  .zona-contacto {
+    flex-direction: column;
+  }
+
+  .zona-contacto .info-contacto p {
+    margin-bottom: 40px;
+  }
+}
+
+@media (max-width: 600px) {
+  .cartas {
+    grid-template-columns: 1fr;
+  }
+
+  .buscador input {
+    width: 100%;
+  }
+
+  .barra-navegacion li {
+    margin: 0 10px;
+  }
+
+  .bloque-promos .bloque-carta {
+    width: 100%;
+  }
+
+  .login-page .formulario-contacto,
+  .auth-page .formulario-contacto,
+  .zona-contacto .formulario-contacto {
+    width: 90%;
+  }
 }

@@ -14,7 +14,6 @@ import java.util.UUID;
 
 import com.DecklyBuy.Backend.users.ProfileUpdateRequest;
 import com.DecklyBuy.Backend.users.User;
-import com.DecklyBuy.Backend.users.UserResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.security.crypto.password.PasswordEncoder;
