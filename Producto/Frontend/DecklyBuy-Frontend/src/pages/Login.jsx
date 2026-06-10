@@ -4,25 +4,74 @@ import { useNavigate } from "react-router-dom";
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [emailError, setEmailError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+  const [backendError, setBackendError] = useState("");
 
   const navigate = useNavigate();
 
-  const handleLogin = () => {
-    if (!email || !password) {
-      alert("Completa todos los campos");
-      return;
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  const handleEmailChange = (e) => {
+    const value = e.target.value;
+    setEmail(value);
+
+    if (!value) {
+      setEmailError("El campo correo no puede quedar vacío");
+    } else if (!emailRegex.test(value)) {
+      setEmailError("Debes ingresar un correo válido. Ejemplo: usuario@correo.com");
+    } else {
+      setEmailError("");
     }
-
-    console.log("Login:", { email, password });
   };
 
-  const handleGoogleLogin = () => {
-    // REDIRECCIÓN AL BACKEND
-    window.location.href = "http://localhost:8080/oauth2/authorization/google";
+  const handlePasswordChange = (e) => {
+    const value = e.target.value;
+    setPassword(value);
+
+    if (!value) {
+      setPasswordError("El campo contraseña no puede quedar vacío");
+    } else {
+      setPasswordError("");
+    }
   };
+
+  const handleLogin = async () => {
+    if (emailError || passwordError) return;
+
+    try {
+      // Nuevo endpoint: login-init
+      const response = await fetch("http://localhost:8080/api/auth/login-init", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ email, password })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setBackendError(data.message || "Error al iniciar sesión");
+        return;
+      }
+
+      // Redirigir a la nueva página de verificación
+      navigate("/login-verify", { state: { formData: { email, password } } });
+    } catch (error) {
+      console.error("Error en login:", error);
+      setBackendError("No se pudo conectar con el servidor");
+    }
+  };
+
+  let finalMessage = "";
+  if (emailError && passwordError) {
+    finalMessage = "Debes ingresar correo y contraseña";
+  } else {
+    finalMessage = emailError || passwordError || backendError;
+  }
 
   return (
-    <main className="zona-contacto login-page">
+    <main className="zona-contacto auth-page">
       <div className="formulario-contacto">
         <h1>Iniciar sesión</h1>
         <p>Accede a tu cuenta para gestionar tus cartas TCG.</p>
@@ -32,7 +81,7 @@ const Login = () => {
           type="email"
           placeholder="Ej: usuario@correo.com"
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          onChange={handleEmailChange}
         />
 
         <h4>Contraseña</h4>
@@ -40,23 +89,36 @@ const Login = () => {
           type="password"
           placeholder="••••••••"
           value={password}
-          onChange={(e) => setPassword(e.target.value)}
+          onChange={handlePasswordChange}
         />
+
+        {/* Enlace de recuperación */}
+        <div className="forgot-password">
+          <span onClick={() => navigate("/forgot-password")}>
+            ¿Olvidaste tu contraseña?
+          </span>
+        </div>
+
+        {finalMessage && <p className="error-message">{finalMessage}</p>}
 
         <button className="btn-enviar" onClick={handleLogin}>
           INGRESAR
         </button>
 
-
-        <button className="btn-google" onClick={handleGoogleLogin}>
+        <button
+          className="btn-google"
+          onClick={() =>
+            (window.location.href =
+              "http://localhost:8080/oauth2/authorization/google")
+          }
+        >
           <img src="/google-logo.png" alt="Google" className="google-icon" />
           Iniciar sesión con Google
         </button>
 
         <button
           className="btn-secundario"
-          style={{ marginTop: "20px" }}
-          onClick={() => navigate("/home")}
+          onClick={() => navigate("/register")}
         >
           REGISTRARSE
         </button>
