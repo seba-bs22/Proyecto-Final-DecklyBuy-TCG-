@@ -1,27 +1,25 @@
 package com.DecklyBuy.Backend.controller;
 
-import com.DecklyBuy.Backend.users.UserResponse;
+import com.DecklyBuy.Backend.users.ProfileUpdateRequest;
+import com.DecklyBuy.Backend.users.User;
 import com.DecklyBuy.Backend.users.UserRepository;
+import com.DecklyBuy.Backend.users.UserResponse;
+
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import com.DecklyBuy.Backend.users.ProfileUpdateRequest;
-import com.DecklyBuy.Backend.users.User;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
-import org.springframework.security.crypto.password.PasswordEncoder;
-
-import java.time.OffsetDateTime;
-
 @RestController
-@CrossOrigin(origins = "http://localhost:5173")
 public class UserController {
 
     private final UserRepository userRepository;
@@ -53,7 +51,7 @@ public class UserController {
         return ResponseEntity.ok(users);
     }
 
-    // usuario por id
+    // Usuario por id
     @GetMapping("/api/users/{id}")
     public ResponseEntity<UserResponse> getUserById(@PathVariable UUID id) {
         return userRepository.findById(id)
@@ -62,7 +60,7 @@ public class UserController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    // usuario por email
+    // Usuario por email
     @GetMapping("/api/users/email/{email}")
     public ResponseEntity<UserResponse> getUserByEmail(@PathVariable String email) {
         return userRepository.findByEmail(email)

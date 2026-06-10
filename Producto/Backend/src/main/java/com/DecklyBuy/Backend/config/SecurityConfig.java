@@ -8,6 +8,7 @@ import com.DecklyBuy.Backend.users.UserResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -23,6 +24,9 @@ public class SecurityConfig {
 
     private final GoogleAuthService googleAuthService;
 
+    @Value("${app.frontend-url}")
+    private String frontendUrl;
+
     public SecurityConfig(GoogleAuthService googleAuthService) {
         this.googleAuthService = googleAuthService;
     }
@@ -30,8 +34,8 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(csrf -> csrf.disable()) // desactiva CSRF
-            .cors(Customizer.withDefaults()) // habilita CORS
+            .csrf(csrf -> csrf.disable())
+            .cors(Customizer.withDefaults())
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(
                     "/",
@@ -58,7 +62,7 @@ public class SecurityConfig {
                     mapper.registerModule(new JavaTimeModule());
                     String json = mapper.writeValueAsString(userResponse);
 
-                    String redirectUrl = "http://localhost:5173/login-success?user=" +
+                    String redirectUrl = frontendUrl + "/login-success?user=" +
                             URLEncoder.encode(json, StandardCharsets.UTF_8);
 
                     response.sendRedirect(redirectUrl);
