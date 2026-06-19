@@ -1,40 +1,46 @@
 package com.DecklyBuy.Backend.posts;
 
-public class PostResponse {
-    private Long id;
-    private String nombre;
-    private String edicion;
-    private String numero;
-    private Double precio;
-    private String estadoDetectado;
-    private Integer score;
-    private Double confidence;
-    private String imagenUrl;
-    private String descripcion;
+import java.time.LocalDateTime;
+import java.util.UUID;
 
-    // Constructor que recibe la entidad Post
+/**
+ * DTO para devolver información de un Post en respuestas de API.
+ */
+public record PostResponse(
+        Long id,
+        String nombre,
+        String edicion,
+        String numero,
+        Double precio,
+        String estadoDetectado,
+        Integer score,
+        Double confidence,
+        String imagenUrl,
+        String descripcion,
+        LocalDateTime fechaPublicacion,
+        UUID userId,
+        String nombreUsuario,
+        String nombreAutor,
+        String apellidoAutor
+) {
+    // Constructor auxiliar que recibe la entidad Post
     public PostResponse(Post post) {
-        this.id = post.getId();
-        this.nombre = post.getNombre();
-        this.edicion = post.getEdicion();
-        this.numero = post.getNumero();
-        this.precio = post.getPrecio();
-        this.estadoDetectado = post.getEstadoDetectado();
-        this.score = post.getScore();
-        this.confidence = post.getConfidence();
-        this.imagenUrl = post.getImagenUrl();
-        this.descripcion = post.getDescripcion();
+        this(
+            post.getId(),
+            post.getNombre(),
+            post.getEdicion(),
+            post.getNumero(),
+            post.getPrecio(),
+            post.getEstadoDetectado(),
+            post.getScore(),
+            post.getConfidence(),
+            post.getImagenUrl(),
+            post.getDescripcion(),
+            post.getFechaPublicacion(),
+            post.getUser() != null ? post.getUser().getId() : null,
+            post.getUser() != null ? post.getUser().getNombreUsuario() : null,
+            post.getUser() != null ? post.getUser().getNombre() : null,
+            post.getUser() != null ? post.getUser().getApellido() : null
+        );
     }
-
-    // Getters
-    public Long getId() { return id; }
-    public String getNombre() { return nombre; }
-    public String getEdicion() { return edicion; }
-    public String getNumero() { return numero; }
-    public Double getPrecio() { return precio; }
-    public String getEstadoDetectado() { return estadoDetectado; }
-    public Integer getScore() { return score; }
-    public Double getConfidence() { return confidence; }
-    public String getImagenUrl() { return imagenUrl; }
-    public String getDescripcion() { return descripcion; }
 }

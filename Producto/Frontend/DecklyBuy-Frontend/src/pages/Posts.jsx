@@ -6,9 +6,10 @@ const Posts = () => {
   useEffect(() => {
     const fetchPosts = async () => {
       try {
-        const response = await fetch("http://localhost:8080/api/posts");
-        const data = await response.json();
-        setPosts(data);
+        const response = await fetch("http://localhost:8080/api/posts"); // usa http, no https
+        const result = await response.json();
+        // El backend devuelve { message: "...", data: [...] }
+        setPosts(result.data || []);
       } catch (error) {
         console.error("Error al cargar publicaciones:", error);
       }
@@ -25,7 +26,13 @@ const Posts = () => {
         ) : (
           posts.map((post) => (
             <div key={post.id} className="post-card">
-              <img src={post.imagenUrl} alt={post.nombre} className="post-image" />
+              {post.imagenUrl && (
+                <img
+                  src={post.imagenUrl}
+                  alt={post.nombre}
+                  className="post-image"
+                />
+              )}
               <h2>{post.nombre}</h2>
               <p><strong>Edición:</strong> {post.edicion}</p>
               <p><strong>Número:</strong> {post.numero}</p>

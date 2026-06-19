@@ -5,6 +5,9 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
+/**
+ * Implementación de UserDetailsService para cargar usuarios desde la base de datos.
+ */
 @Service
 public class UserDetailsServiceImpl implements UserDetailsService {
 
@@ -16,13 +19,15 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        return userRepository.findByEmail(email)
+        return userRepository.findByEmail(email.trim().toLowerCase())
                 .map(user -> org.springframework.security.core.userdetails.User
                         .withUsername(user.getEmail())
-                        // ⚡ usa el campo correcto de tu entidad
-                        .password(user.getPasswordHash() != null ? user.getPasswordHash() : "")
-                        // ⚡ mapea el rol de tu entidad, o usa "USER" por defecto
+                        // ⚡ Si el usuario es de Google, no tiene passwordHash → usar un valor dummy
+                        .password(user.getPasswordHash() != null ? user.getPasswordHash() : "{noop}")
+                        // ⚡ Mapear rol, o usar "USER" por defecto
                         .roles(user.getRol() != null ? user.getRol() : "USER")
+                        .accountLocked("LOCKED".equals(user.getEstadoCuenta()))
+                        .disabled("DISABLED".equals(user.getEstadoCuenta()))
                         .build()
                 )
                 .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado: " + email));

@@ -11,7 +11,7 @@ const Home = () => {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    fetch("http://localhost:8080/api/auth/me", {
+    fetch("https://localhost:8080/api/auth/me", {
       credentials: "include" // importante para enviar cookies de sesión
     })
       .then(async res => {

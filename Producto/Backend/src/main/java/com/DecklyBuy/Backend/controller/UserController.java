@@ -19,6 +19,10 @@ import jakarta.servlet.http.HttpSession;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import java.time.OffsetDateTime;
 
+/**
+ * Controlador REST para gestión de usuarios.
+ * Incluye endpoints para obtener y actualizar perfiles.
+ */
 @RestController
 public class UserController {
 
@@ -30,9 +34,9 @@ public class UserController {
         this.passwordEncoder = passwordEncoder;
     }
 
-    // Endpoint unificado para obtener usuario autenticado
+    // Obtener usuario autenticado
     @GetMapping("/user")
-    public ResponseEntity<?> getUser(
+    public ResponseEntity<ApiResponse> getUser(
             @AuthenticationPrincipal OAuth2User principal,
             HttpServletRequest request
     ) {
@@ -43,7 +47,12 @@ public class UserController {
                     .body(new ApiResponse("No hay sesión activa.", null));
         }
 
-        UUID userId = (UUID) session.getAttribute("AUTH_USER_ID");
+        Object attr = session.getAttribute("AUTH_USER_ID");
+        if (!(attr instanceof UUID userId)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ApiResponse("Sesión inválida.", null));
+        }
+
         return userRepository.findById(userId)
                 .map(UserResponse::new)
                 .map(user -> ResponseEntity.ok(new ApiResponse("Usuario actual.", user)))
@@ -64,49 +73,61 @@ public class UserController {
 
     // Obtener usuario por id
     @GetMapping("/api/users/{id}")
-    public ResponseEntity<UserResponse> getUserById(@PathVariable UUID id) {
+    public ResponseEntity<ApiResponse> getUserById(@PathVariable UUID id) {
+        if (id == null) {
+            return ResponseEntity.badRequest()
+                    .body(new ApiResponse("ID de usuario inválido.", null));
+        }
+
         return userRepository.findById(id)
                 .map(UserResponse::new)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+                .map(user -> ResponseEntity.ok(new ApiResponse("Usuario encontrado.", user)))
+                .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new ApiResponse("Usuario no encontrado.", null)));
     }
 
     // Obtener usuario por email
     @GetMapping("/api/users/email/{email}")
-    public ResponseEntity<UserResponse> getUserByEmail(@PathVariable String email) {
-        return userRepository.findByEmail(email)
+    public ResponseEntity<ApiResponse> getUserByEmail(@PathVariable String email) {
+        return userRepository.findByEmail(email.trim().toLowerCase())
                 .map(UserResponse::new)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+                .map(user -> ResponseEntity.ok(new ApiResponse("Usuario encontrado.", user)))
+                .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new ApiResponse("Usuario no encontrado.", null)));
     }
 
     // Actualizar perfil
     @PutMapping("/api/users/profile")
-    public ResponseEntity<?> updateProfile(
+    public ResponseEntity<ApiResponse> updateProfile(
             @RequestBody ProfileUpdateRequest request,
             HttpServletRequest httpRequest
     ) {
         HttpSession session = httpRequest.getSession(false);
 
         if (session == null || session.getAttribute("AUTH_USER_ID") == null) {
-            return ResponseEntity.status(401)
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(new ApiResponse("No hay sesión activa.", null));
         }
 
-        UUID userId = (UUID) session.getAttribute("AUTH_USER_ID");
+        Object attr = session.getAttribute("AUTH_USER_ID");
+        if (!(attr instanceof UUID userId)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ApiResponse("Sesión inválida.", null));
+        }
+
         User user = userRepository.findById(userId).orElse(null);
 
         if (user == null) {
-            return ResponseEntity.status(404)
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(new ApiResponse("Usuario no encontrado.", null));
         }
 
-        if (isBlank(request.getNombre()) || isBlank(request.getNombreUsuario())) {
+        if (isBlank(request.nombre()) || isBlank(request.nombreUsuario())) {
             return ResponseEntity.badRequest()
                     .body(new ApiResponse("Nombre y nombre de usuario son obligatorios.", null));
         }
 
-        String nuevoNombreUsuario = request.getNombreUsuario().trim();
+        String nuevoNombreUsuario = request.nombreUsuario().trim();
 
         if (!nuevoNombreUsuario.equals(user.getNombreUsuario())
                 && userRepository.existsByNombreUsuario(nuevoNombreUsuario)) {
@@ -114,32 +135,34 @@ public class UserController {
                     .body(new ApiResponse("El nombre de usuario ya está en uso.", null));
         }
 
-        user.setNombre(request.getNombre().trim());
-        user.setApellido(request.getApellido() != null ? request.getApellido().trim() : null);
+        user.setNombre(request.nombre().trim());
+        user.setApellido(request.apellido() != null ? request.apellido().trim() : null);
         user.setNombreUsuario(nuevoNombreUsuario);
-        user.setNumeroContacto(request.getNumeroContacto() != null ? request.getNumeroContacto().trim() : null);
+        user.setNumeroContacto(request.numeroContacto() != null ? request.numeroContacto().trim() : null);
         user.setPerfilCompleto(true);
         user.setFechaActualizacion(OffsetDateTime.now());
 
         boolean quiereCambiarPassword =
-                request.getPassword() != null && !request.getPassword().trim().isEmpty();
+                request.password() != null && !request.password().trim().isEmpty();
 
         if (quiereCambiarPassword) {
-            if (!request.getPassword().equals(request.getConfirmPassword())) {
+            // 🚫 Bloqueo: si la cuenta es de Google, no permitir cambio de contraseña
+            if ("GOOGLE".equals(user.getAuthProvider()) || user.getGoogleId() != null) {
+                return ResponseEntity.badRequest()
+                        .body(new ApiResponse("Las cuentas vinculadas a Google no pueden cambiar contraseña.", null));
+            }
+
+            if (!request.password().equals(request.confirmPassword())) {
                 return ResponseEntity.badRequest()
                         .body(new ApiResponse("Las contraseñas no coinciden.", null));
             }
 
-            if (request.getPassword().length() < 6) {
+            if (request.password().length() < 6) {
                 return ResponseEntity.badRequest()
                         .body(new ApiResponse("La contraseña debe tener al menos 6 caracteres.", null));
             }
 
-            user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
-
-            if ("GOOGLE".equals(user.getAuthProvider())) {
-                user.setAuthProvider("LOCAL_GOOGLE");
-            }
+            user.setPasswordHash(passwordEncoder.encode(request.password()));
         }
 
         User savedUser = userRepository.save(user);

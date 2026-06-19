@@ -6,15 +6,38 @@ const VerifyCode = () => {
   const location = useLocation();
   const formData = location.state?.formData;
 
+  // 🔑 Si vienes desde Google, el email llega en la URL
+  const query = new URLSearchParams(location.search);
+  const emailFromUrl = query.get("email");
+
+  const email = formData?.email || emailFromUrl;
+
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
 
   const handleVerify = async () => {
     try {
-      const response = await fetch("http://localhost:8080/api/auth/register-verify", {
+      // 🔑 Armar payload según el flujo
+      const payload = formData?.password
+        ? {
+            email: email.trim().toLowerCase(),
+            password: formData.password,
+            nombre: formData.nombre,
+            nombreUsuario: formData.nombreUsuario,
+            apellido: formData.apellido,
+            numeroContacto: formData.numeroContacto,
+            code: code.trim()
+          }
+        : {
+            email: email.trim().toLowerCase(),
+            code: code.trim()
+          };
+
+      const response = await fetch("https://localhost:8080/api/auth/register-verify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...formData, code })
+        body: JSON.stringify(payload),
+        credentials: "include"
       });
 
       const data = await response.json().catch(() => null);
@@ -24,9 +47,8 @@ const VerifyCode = () => {
         return;
       }
 
-      // guardar usuario en localStorage
-      localStorage.setItem("user", JSON.stringify(data.user));
-      navigate("/home");
+      // ✅ Ya no usamos localStorage, confiamos en la cookie de sesión
+      navigate("/home", { replace: true });
     } catch (err) {
       setError("No se pudo conectar con el servidor");
     }
@@ -36,7 +58,7 @@ const VerifyCode = () => {
     <main className="zona-contacto auth-page">
       <div className="formulario-contacto">
         <h1>Verificación de correo</h1>
-        <p>Ingresa el código que enviamos a tu correo {formData?.email}</p>
+        <p>Ingresa el código que enviamos a tu correo {email}</p>
 
         <input
           type="text"
@@ -50,12 +72,15 @@ const VerifyCode = () => {
           VERIFICAR
         </button>
 
-        <button
-          className="btn-secundario"
-          onClick={() => navigate("/register", { state: { formData } })}
-        >
-          VOLVER ATRÁS
-        </button>
+        {/* Solo tiene sentido volver atrás si venías del registro tradicional */}
+        {formData && (
+          <button
+            className="btn-secundario"
+            onClick={() => navigate("/register", { state: { formData } })}
+          >
+            VOLVER ATRÁS
+          </button>
+        )}
       </div>
     </main>
   );

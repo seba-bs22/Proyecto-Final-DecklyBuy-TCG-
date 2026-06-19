@@ -6,16 +6,26 @@ const LoginVerify = () => {
   const location = useLocation();
   const formData = location.state?.formData; // viene desde Login.jsx
 
+  // 🔑 Si vienes desde Google, el email llega en la URL
+  const query = new URLSearchParams(location.search);
+  const emailFromUrl = query.get("email");
+
+  const email = formData?.email || emailFromUrl;
+
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
 
   const handleVerify = async () => {
     try {
-      const response = await fetch("http://localhost:8080/api/auth/login-verify", {
+      const response = await fetch("https://localhost:8080/api/auth/login-verify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...formData, code }),
-        credentials: "include" // 🔑 esto asegura que se guarde la cookie JSESSIONID
+        body: JSON.stringify({
+          email,
+          password: formData?.password, // solo existe en login tradicional
+          code
+        }),
+        credentials: "include" // 🔑 asegura que se guarde la cookie JSESSIONID
       });
 
       const data = await response.json().catch(() => null);
@@ -25,9 +35,8 @@ const LoginVerify = () => {
         return;
       }
 
-      // guardar usuario en localStorage
-      localStorage.setItem("user", JSON.stringify(data.user));
-      navigate("/home");
+      // ✅ Ya no usamos localStorage, confiamos en la cookie de sesión
+      navigate("/home", { replace: true });
     } catch (err) {
       setError("No se pudo conectar con el servidor");
     }
@@ -37,7 +46,7 @@ const LoginVerify = () => {
     <main className="zona-contacto auth-page">
       <div className="formulario-contacto">
         <h1>Verificación de login</h1>
-        <p>Ingresa el código que enviamos a tu correo {formData?.email}</p>
+        <p>Ingresa el código que enviamos a tu correo {email}</p>
 
         <input
           type="text"
@@ -51,12 +60,15 @@ const LoginVerify = () => {
           VERIFICAR
         </button>
 
-        <button
-          className="btn-secundario"
-          onClick={() => navigate("/login", { state: { formData } })}
-        >
-          VOLVER ATRÁS
-        </button>
+        {/* Solo tiene sentido volver atrás si venías del login tradicional */}
+        {formData && (
+          <button
+            className="btn-secundario"
+            onClick={() => navigate("/login", { state: { formData } })}
+          >
+            VOLVER ATRÁS
+          </button>
+        )}
       </div>
     </main>
   );

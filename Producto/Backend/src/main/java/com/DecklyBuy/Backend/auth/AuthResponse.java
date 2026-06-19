@@ -2,32 +2,17 @@ package com.DecklyBuy.Backend.auth;
 
 import com.DecklyBuy.Backend.users.UserResponse;
 
-public class AuthResponse {
+/**
+ * Respuesta estándar para operaciones de autenticación.
+ * Incluye un indicador de éxito, un mensaje y el usuario.
+ */
+public record AuthResponse(boolean success, String message, UserResponse user) {
 
-    private String message;
-    private UserResponse user;
-
-    public AuthResponse() {
+    public static AuthResponse ok(String message, UserResponse user) {
+        return new AuthResponse(true, message, user);
     }
 
-    public AuthResponse(String message, UserResponse user) {
-        this.message = message;
-        this.user = user;
-    }
-
-    public String getMessage() {
-        return message;
-    }
-
-    public UserResponse getUser() {
-        return user;
-    }
-
-    public void setMessage(String message) {
-        this.message = message;
-    }
-
-    public void setUser(UserResponse user) {
-        this.user = user;
+    public static AuthResponse error(String message) {
+        return new AuthResponse(false, message, null);
     }
 }

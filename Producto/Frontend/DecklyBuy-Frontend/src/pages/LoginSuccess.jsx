@@ -1,17 +1,29 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 const LoginSuccess = () => {
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Ya no necesitamos leer parámetros de la URL.
-    // El backend guarda la sesión y Home.jsx se encargará de obtener el usuario.
-    const timer = setTimeout(() => {
-      navigate("/home");
-    }, 2000);
-
-    return () => clearTimeout(timer);
+    // Validar la sesión contra el backend
+    fetch("https://localhost:8080/api/auth/session", {
+      credentials: "include" // 🔑 envía la cookie JSESSIONID
+    })
+      .then((res) => {
+        if (res.ok) {
+          // Sesión válida → redirigir a home
+          navigate("/home", { replace: true });
+        } else {
+          // Sesión inválida → volver al login con error
+          navigate("/login?error=session", { replace: true });
+        }
+      })
+      .catch(() => {
+        // Error de red → volver al login
+        navigate("/login?error=network", { replace: true });
+      })
+      .finally(() => setLoading(false));
   }, [navigate]);
 
   return (
@@ -22,7 +34,7 @@ const LoginSuccess = () => {
           alt="Cargando..."
           className="loader-gif"
         />
-        <h2>Iniciando sesión...</h2>
+        <h2>{loading ? "Iniciando sesión..." : "Redirigiendo..."}</h2>
       </div>
     </main>
   );

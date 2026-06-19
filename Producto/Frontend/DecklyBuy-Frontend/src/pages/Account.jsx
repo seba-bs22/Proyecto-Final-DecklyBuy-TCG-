@@ -16,11 +16,12 @@ const Account = () => {
 
   const [fotoPerfil, setFotoPerfil] = useState("/user.png");
   const [loading, setLoading] = useState(true);
+  const [isGoogleAccount, setIsGoogleAccount] = useState(false);
 
   useEffect(() => {
     const loadUser = async () => {
       try {
-        const response = await fetch("http://localhost:8080/api/auth/me", {
+        const response = await fetch("https://localhost:8080/api/auth/me", {
           method: "GET",
           credentials: "include"
         });
@@ -46,6 +47,11 @@ const Account = () => {
         });
 
         setFotoPerfil(user.fotoPerfil || "/user.png");
+
+        // Si el usuario tiene googleId, marcamos que es cuenta Google
+        if (user.googleId) {
+          setIsGoogleAccount(true);
+        }
       } catch (error) {
         console.error("Error cargando perfil:", error);
         navigate("/login", { replace: true });
@@ -72,7 +78,8 @@ const Account = () => {
       return;
     }
 
-    if (formData.password || formData.confirmPassword) {
+    // Solo validamos contraseña si no es cuenta Google
+    if (!isGoogleAccount && (formData.password || formData.confirmPassword)) {
       if (formData.password !== formData.confirmPassword) {
         alert("Las contraseñas no coinciden");
         return;
@@ -85,7 +92,7 @@ const Account = () => {
     }
 
     try {
-      const response = await fetch("http://localhost:8080/api/users/profile", {
+      const response = await fetch("https://localhost:8080/api/users/profile", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json"
@@ -96,8 +103,9 @@ const Account = () => {
           apellido: formData.apellido,
           nombreUsuario: formData.nombreUsuario,
           numeroContacto: formData.numeroContacto,
-          password: formData.password,
-          confirmPassword: formData.confirmPassword
+          // Solo enviamos contraseña si no es cuenta Google
+          password: isGoogleAccount ? null : formData.password,
+          confirmPassword: isGoogleAccount ? null : formData.confirmPassword
         })
       });
 
@@ -184,23 +192,28 @@ const Account = () => {
           className="input-readonly"
         />
 
-        <h4>Nueva contraseña</h4>
-        <input
-          type="password"
-          name="password"
-          placeholder="Opcional"
-          value={formData.password}
-          onChange={handleChange}
-        />
+        {/* Solo mostramos campos de contraseña si NO es cuenta Google */}
+        {!isGoogleAccount && (
+          <>
+            <h4>Nueva contraseña</h4>
+            <input
+              type="password"
+              name="password"
+              placeholder="Opcional"
+              value={formData.password}
+              onChange={handleChange}
+            />
 
-        <h4>Confirmar contraseña</h4>
-        <input
-          type="password"
-          name="confirmPassword"
-          placeholder="Repite la nueva contraseña"
-          value={formData.confirmPassword}
-          onChange={handleChange}
-        />
+            <h4>Confirmar contraseña</h4>
+            <input
+              type="password"
+              name="confirmPassword"
+              placeholder="Repite la nueva contraseña"
+              value={formData.confirmPassword}
+              onChange={handleChange}
+            />
+          </>
+        )}
 
         <div className="perfil-botones">
           <button className="btn-secundario" onClick={() => navigate(-1)}>

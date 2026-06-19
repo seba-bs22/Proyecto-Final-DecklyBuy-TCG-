@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 const Login = () => {
@@ -7,10 +7,25 @@ const Login = () => {
   const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const [backendError, setBackendError] = useState("");
+  const [checkingSession, setCheckingSession] = useState(true);
 
   const navigate = useNavigate();
-
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  // 🔑 Verificar sesión activa al entrar a /login
+  useEffect(() => {
+    fetch("https://localhost:8080/api/auth/session", { credentials: "include" })
+      .then(res => {
+        if (res.ok) {
+          // Sesión activa → redirigir a home
+          navigate("/home", { replace: true });
+        } else {
+          // No hay sesión → mostrar login
+          setCheckingSession(false);
+        }
+      })
+      .catch(() => setCheckingSession(false));
+  }, [navigate]);
 
   const handleEmailChange = (e) => {
     const value = e.target.value;
@@ -40,11 +55,11 @@ const Login = () => {
     if (emailError || passwordError) return;
 
     try {
-      const response = await fetch("http://localhost:8080/api/auth/login-init", {
+      const response = await fetch("https://localhost:8080/api/auth/login-init", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
-        credentials: "include" // 🔑 ahora sí se guarda la cookie JSESSIONID
+        credentials: "include" // 🔑 guarda la cookie JSESSIONID
       });
 
       const data = await response.json().catch(() => null);
@@ -67,6 +82,10 @@ const Login = () => {
     finalMessage = "Debes ingresar correo y contraseña";
   } else {
     finalMessage = emailError || passwordError || backendError;
+  }
+
+  if (checkingSession) {
+    return <p>Verificando sesión...</p>;
   }
 
   return (
@@ -107,7 +126,7 @@ const Login = () => {
           className="btn-google"
           onClick={() =>
             (window.location.href =
-              "http://localhost:8080/oauth2/authorization/google")
+              "https://localhost:8080/oauth2/authorization/google")
           }
         >
           <img src="/google-logo.png" alt="Google" className="google-icon" />
