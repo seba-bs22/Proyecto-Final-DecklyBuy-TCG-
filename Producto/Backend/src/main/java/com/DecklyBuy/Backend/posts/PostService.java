@@ -43,7 +43,7 @@ public class PostService {
                 .orElseThrow(() -> new RuntimeException("Post no encontrado"));
     }
 
-    // Crear post (con imagenUrl incluida)
+    // Crear post
     public PostResponse createPost(PostRequest request, UUID userId) {
         Objects.requireNonNull(userId, "El usuario es obligatorio.");
 
@@ -56,7 +56,7 @@ public class PostService {
         post.setNumero(request.numero());
         post.setPrecio(request.precio());
         post.setEstadoDetectado(request.estadoDetectado());
-        post.setImagenUrl(request.imagenUrl()); // guardar URL pública
+        post.setImagenUrl(request.imagenUrl()); 
         post.setDescripcion(request.descripcion());
         post.setUser(user);
 
@@ -64,11 +64,15 @@ public class PostService {
         return new PostResponse(saved);
     }
 
-    // Actualizar post (incluyendo imagenUrl si se cambia)
-    public PostResponse updatePost(Long id, PostUpdateRequest request) {
+    // Actualizar post
+    public PostResponse updatePost(Long id, PostUpdateRequest request, UUID userId) {
         Objects.requireNonNull(id, "El id es obligatorio.");
         Post post = postRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Post no encontrado"));
+
+        if (!post.getUser().getId().equals(userId)) {
+            throw new RuntimeException("No tienes permisos para editar esta publicacion.");
+        }
 
         post.setNombre(request.nombre());
         post.setEdicion(request.edicion());
@@ -85,17 +89,19 @@ public class PostService {
         return new PostResponse(updated);
     }
 
-    // Eliminar post (y su imagen en Supabase)
-    public void deletePost(Long id) {
+    // Eliminar post
+    public void deletePost(Long id, UUID userId) {
         Objects.requireNonNull(id, "El id es obligatorio.");
         Post post = postRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Post no encontrado"));
 
-        // Borrar imagen en Supabase si existe
+        if (!post.getUser().getId().equals(userId)) {
+            throw new RuntimeException("No tienes permisos para eliminar esta publicacion.");
+        }
+
         if (post.getImagenUrl() != null && !post.getImagenUrl().isBlank()) {
             try {
                 String bucket = "posts";
-                // Extraer la ruta completa después de "/posts/"
                 String path = post.getImagenUrl().substring(post.getImagenUrl().indexOf(bucket) + bucket.length() + 1);
                 String deleteUrl = supabaseUrl + "/storage/v1/object/" + bucket + "/" + path;
 
@@ -115,7 +121,7 @@ public class PostService {
         postRepository.deleteById(id);
     }
 
-    // Listar posts de un usuario específico
+    // Listar posts de un usuario especifico
     public List<PostResponse> getPostsByUser(UUID userId) {
         Objects.requireNonNull(userId, "Buscar usuario por ID");
         User user = userRepository.findById(userId)

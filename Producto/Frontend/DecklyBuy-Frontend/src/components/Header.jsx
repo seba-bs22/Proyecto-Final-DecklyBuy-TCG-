@@ -35,7 +35,8 @@ const Header = () => {
   // logout 
   const handleLogout = async () => {
     try {
-      await fetch("http://localhost:8080/api/auth/logout", {
+      // CORREGIDO: Cambiado a HTTPS para evitar bloqueos CORS al cerrar sesión
+      await fetch("https://localhost:8080/api/auth/logout", {
         method: "POST",
         credentials: "include"
       });
@@ -83,6 +84,10 @@ const Header = () => {
             <div className="perfil-dropdown">
               <Link to="/account">Ver mi perfil</Link>
               <Link to="/create-post">Crear publicación</Link>
+              
+              {/* AQUÍ INCORPORAMOS EL LINK FÍSICO DIRECTO A POSTS */}
+              <Link to="/posts">Mis publicaciones</Link>
+              
               <button onClick={handleLogout} className="logout-btn">
                 Cerrar sesión
               </button>

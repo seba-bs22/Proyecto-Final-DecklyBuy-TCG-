@@ -8,13 +8,16 @@ import jakarta.servlet.http.HttpServletResponse;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-
-import org.springframework.security.config.Customizer;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
-
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.List;
 
 @Configuration
 public class SecurityConfig {
@@ -29,14 +32,19 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
             .csrf(csrf -> csrf.disable())
-            .cors(Customizer.withDefaults())
+            // Implementación explícita de CORS para HTTPS local
+            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .authorizeHttpRequests(auth -> auth
+                // 1. Permitir siempre las peticiones de pre-vuelo (CORS OPTIONS)
+                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                // 2. Rutas públicas generales
                 .requestMatchers(
                     "/", "/login**", "/error",
                     "/swagger-ui/**", "/swagger-ui.html",
                     "/v3/api-docs/**",
                     "/api/ia/**", "/api/users/**", "/api/auth/**"
                 ).permitAll()
+                // 3. Rutas que requieren autenticación por sesión
                 .requestMatchers("/api/upload", "/api/posts/**").authenticated()
                 .anyRequest().permitAll()
             )
@@ -51,7 +59,6 @@ public class SecurityConfig {
                 .successHandler((request, response, authentication) -> {
                     var oauthUser = (org.springframework.security.oauth2.core.user.OAuth2User) authentication.getPrincipal();
 
-                    // Log de atributos crudos que entrega Google
                     System.out.println("Atributos de Google en successHandler: " + oauthUser.getAttributes());
 
                     GoogleAuthResponse authResponse = googleAuthService.processGoogleUser(oauthUser);
@@ -62,10 +69,8 @@ public class SecurityConfig {
                         return;
                     }
 
-                    // Guardar el ID del usuario en la sesión
                     request.getSession(true).setAttribute("AUTH_USER_ID", userResponse.id());
 
-                    // 🔑 Redirigir según el flujo
                     if ("login".equals(authResponse.flow())) {
                         response.sendRedirect("https://localhost:5173/login-verify?email=" + authResponse.email());
                     } else {
@@ -73,7 +78,7 @@ public class SecurityConfig {
                     }
                 })
                 .failureHandler((request, response, exception) -> {
-                    exception.printStackTrace(); // imprime el error en consola
+                    exception.printStackTrace();
                     System.out.println("Error en login con Google: " + exception.getMessage());
                     response.sendRedirect("https://localhost:5173/login?error=google");
                 })
@@ -85,6 +90,20 @@ public class SecurityConfig {
             );
 
         return http.build();
+    }
+
+    // Configuración centralizada de CORS para heredar a Spring Security
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(List.of("https://localhost:5173", "http://localhost:5173"));
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Requested-With", "Accept", "Origin"));
+        configuration.setAllowCredentials(true); // Crucial para que viaje el JSESSIONID
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
     }
 
     @Bean

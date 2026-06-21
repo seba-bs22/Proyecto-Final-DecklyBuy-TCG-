@@ -14,6 +14,7 @@ import java.util.*;
  */
 @RestController
 @RequestMapping("/api")
+@CrossOrigin(origins = "https://localhost:5173", allowCredentials = "true")
 public class UploadController {
 
     @Value("${supabase.url}")
@@ -42,32 +43,42 @@ public class UploadController {
             }
 
             String bucket = "posts";
-            // Guardar dentro de un folder "images/"
             String fileName = "images/" + System.currentTimeMillis() + "-" + originalName;
             String uploadUrl = supabaseUrl + "/storage/v1/object/" + bucket + "/" + fileName;
+
+            // Log de control previo a la ejecución
+            System.out.println("Intentando conectar con URL de Supabase: " + uploadUrl);
 
             RestTemplate restTemplate = new RestTemplate();
             HttpHeaders headers = new HttpHeaders();
             headers.set("Authorization", "Bearer " + supabaseKey);
-            headers.set("apikey", supabaseKey); // cabecera adicional requerida
-            headers.setContentType(MediaType.valueOf(contentType));
+            headers.set("apikey", supabaseKey); 
+            
+            // MEJORA: Forzar APPLICATION_OCTET_STREAM para evitar rechazos binarios en la API REST de Supabase Storage
+            headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
 
             HttpEntity<byte[]> entity = new HttpEntity<>(file.getBytes(), headers);
 
-            // IMPORTANTE: usar PUT
-            ResponseEntity<String> response = restTemplate.exchange(uploadUrl, Objects.requireNonNull(HttpMethod.PUT), entity, String.class);
+            ResponseEntity<String> response = restTemplate.exchange(uploadUrl, HttpMethod.PUT, entity, String.class);
 
             if (response.getStatusCode().is2xxSuccessful()) {
-                // URL pública para guardar en el Post
                 String publicUrl = supabaseUrl + "/storage/v1/object/public/" + bucket + "/" + fileName;
                 return ResponseEntity.ok(Map.of("url", publicUrl));
             } else {
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                        .body(Map.of("error", "Error al subir imagen: " + response.getStatusCode()));
+                        .body(Map.of("error", "Supabase rechazó la subida con código: " + response.getStatusCode()));
             }
-        } catch (Exception e) {
+        } catch (org.springframework.web.client.ResourceAccessException ex) {
+            // MEJORA: Captura y traza explícita para fallas de red/SSL en la terminal de Java
+            System.err.println("❌ ERROR DE RED O SSL AL LLAMAR A SUPABASE: " + ex.getMessage());
+            ex.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Excepción: " + e.getMessage()));
+                    .body(Map.of("error", "Error de red/SSL con Supabase: " + ex.getMessage()));
+        } catch (Exception e) {
+            System.err.println("❌ EXCEPCIÓN GENERAL EN UPLOAD: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Causa interna: " + e.getMessage()));
         }
     }
 }

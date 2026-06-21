@@ -1,10 +1,20 @@
 from fastapi import FastAPI, UploadFile, File
+from fastapi.middleware.cors import CORSMiddleware
 from ultralytics import YOLO
 import shutil
 import os
 import uuid
 
 app = FastAPI()
+
+# Configuracion de seguridad CORS para desarrollo local
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["https://localhost:5173", "http://localhost:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # modelo entranado
 model = YOLO("models/decklybuy_condition_v2.pt")
@@ -21,7 +31,7 @@ SCORES = {
     "Heavily_played": 3.0,
     "Damaged": 1.0,
     "Invalid_card": 0.0,
-    "Not_card":0.0
+    "Not_card": 0.0
 }
 
 # para formato de texto
@@ -48,7 +58,7 @@ def home():
 
 
 # analizar carta 
-@app.post("/analyze-card")
+@app.post("/api/ia/analyze-card")
 async def analyze_card(file: UploadFile = File(...)):
     file_id = str(uuid.uuid4())
     file_path = f"{UPLOAD_DIR}/{file_id}_{file.filename}"
@@ -56,7 +66,6 @@ async def analyze_card(file: UploadFile = File(...)):
     # para guardar imagen subida
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
-
 
     results = model(file_path)
     result = results[0]
@@ -70,7 +79,6 @@ async def analyze_card(file: UploadFile = File(...)):
 
     estado = DISPLAY_NAMES.get(predicted_class, predicted_class)
     score = SCORES.get(predicted_class, 0.0)
-
 
     predictions = []
 
@@ -94,8 +102,9 @@ async def analyze_card(file: UploadFile = File(...)):
         "predictions": predictions
     }
 
+
 # para devolver a backend
-@app.post("/detect-score")
+@app.post("/api/ia/detect-score")
 async def detect_score(file: UploadFile = File(...)):
     file_id = str(uuid.uuid4())
     file_path = f"{UPLOAD_DIR}/{file_id}_{file.filename}"

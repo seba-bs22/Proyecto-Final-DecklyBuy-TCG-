@@ -4,9 +4,11 @@ import { useNavigate } from "react-router-dom";
 const CreatePost = () => {
   const navigate = useNavigate();
 
+  // Estados de carga de archivos y vista previa
   const [imagePreview, setImagePreview] = useState(null);
   const [selectedImage, setSelectedImage] = useState(null);
 
+  // Estados del formulario de la carta
   const [formData, setFormData] = useState({
     nombre: "",
     edicion: "",
@@ -15,10 +17,12 @@ const CreatePost = () => {
     descripcion: ""
   });
 
+  // Estados del servicio de inteligencia artificial y modales
   const [analysisResult, setAnalysisResult] = useState(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [modal, setModal] = useState(null);
 
+  // Manejo de seleccion de archivos
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -27,6 +31,7 @@ const CreatePost = () => {
     setAnalysisResult(null);
   };
 
+  // Manejo de cambios en los inputs del formulario
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({
@@ -35,6 +40,7 @@ const CreatePost = () => {
     });
   };
 
+  // Peticion al servicio de analisis de IA
   const handleAnalyze = async () => {
     if (!selectedImage) {
       setModal({ valid: false, mensaje: "Debes subir una imagen antes de analizarla." });
@@ -44,23 +50,32 @@ const CreatePost = () => {
     try {
       const data = new FormData();
       data.append("file", selectedImage);
-      const response = await fetch("http://localhost:8080/api/ia/detect-score", {
+      
+      const response = await fetch("https://localhost:5000/api/ia/detect-score", {
         method: "POST",
         body: data,
-        credentials: "include" // 🔑 enviar cookie de sesión
+        credentials: "include"
       });
+      
       const result = await response.json();
-      setAnalysisResult(result.valid ? result : null);
-      setModal({ valid: result.valid, mensaje: result.mensaje });
+      
+      if (response.ok && result.valid) {
+        setAnalysisResult(result);
+        setModal({ valid: true, mensaje: result.mensaje || "Analisis completado con exito." });
+      } else {
+        setAnalysisResult(null);
+        setModal({ valid: false, mensaje: result.mensaje || "La imagen no pudo ser validada por la IA." });
+      }
     } catch (error) {
       console.error("Error al analizar imagen:", error);
       setAnalysisResult(null);
-      setModal({ valid: false, mensaje: "No se pudo conectar con el servicio de análisis." });
+      setModal({ valid: false, mensaje: "No se pudo conectar con el servicio de analisis." });
     } finally {
       setAnalyzing(false);
     }
   };
 
+  // Proceso de subida de imagen e impacto en base de datos
   const handlePublish = async () => {
     if (!selectedImage) {
       setModal({ valid: false, mensaje: "Debes subir una imagen antes de publicar." });
@@ -76,37 +91,48 @@ const CreatePost = () => {
     }
 
     try {
-      // Paso 1: subir la imagen
       const data = new FormData();
       data.append("file", selectedImage);
-      const uploadResponse = await fetch("http://localhost:8080/api/upload", {
+      
+      const uploadResponse = await fetch("https://localhost:8080/api/upload", {
         method: "POST",
         body: data,
-        credentials: "include" // 🔑 enviar cookie de sesión
+        credentials: "include"
       });
-      const { url } = await uploadResponse.json();
 
-      // Paso 2: crear el post
+      if (!uploadResponse.ok) {
+        const uploadErr = await uploadResponse.json();
+        // MEJORA: Prioriza mostrar el mensaje de error explícito detallado por el Backend
+        setModal({ valid: false, mensaje: uploadErr.error || uploadErr.mensaje || "Error al subir la imagen al servidor." });
+        return;
+      }
+
+      const uploadJson = await uploadResponse.json();
+      const imageUrl = uploadJson.url; 
+
       const postData = {
         ...formData,
         estadoDetectado: analysisResult.estado,
         score: analysisResult.score,
         confidence: analysisResult.confidence,
-        imagenUrl: url
+        imagenUrl: imageUrl
       };
 
-      const response = await fetch("http://localhost:8080/api/posts", {
+      const response = await fetch("https://localhost:8080/api/posts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(postData),
-        credentials: "include" // 🔑 enviar cookie de sesión
+        credentials: "include"
       });
 
       if (response.ok) {
-        setModal({ valid: true, mensaje: "Publicación creada con éxito." });
-        navigate("/posts");
+        setModal({ valid: true, mensaje: "Publicacion creada con exito." });
+        setTimeout(() => {
+          navigate("/posts");
+        }, 1500);
       } else {
-        setModal({ valid: false, mensaje: "Error al crear la publicación." });
+        const errData = await response.json();
+        setModal({ valid: false, mensaje: errData.error || errData.mensaje || "Error al crear la publicacion." });
       }
     } catch (error) {
       console.error("Error al publicar:", error);

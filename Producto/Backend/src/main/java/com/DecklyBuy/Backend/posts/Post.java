@@ -43,6 +43,7 @@ public class Post {
     // Relación con User
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties({"posts", "hibernateLazyInitializer", "handler"})
     private User user;
 
     @PrePersist

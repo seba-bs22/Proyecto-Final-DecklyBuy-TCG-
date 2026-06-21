@@ -12,6 +12,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/posts")
+@CrossOrigin(origins = "https://localhost:5173", allowCredentials = "true")
 public class PostController {
 
     private final PostService postService;
@@ -20,13 +21,13 @@ public class PostController {
         this.postService = postService;
     }
 
-    // Crear publicación
+    // Crear publicacion
     @PostMapping
     public ResponseEntity<PostApiResponse> crearPost(@Valid @RequestBody PostRequest request,
                                                      HttpServletRequest httpRequest) {
         HttpSession session = httpRequest.getSession(false);
         if (session == null || session.getAttribute("AUTH_USER_ID") == null) {
-            return ResponseEntity.status(401).body(new PostApiResponse("No hay sesión activa", null));
+            return ResponseEntity.status(401).body(new PostApiResponse("No hay sesion activa", null));
         }
 
         UUID userId = (UUID) session.getAttribute("AUTH_USER_ID");
@@ -41,25 +42,49 @@ public class PostController {
         return ResponseEntity.ok(new PostApiResponse("Lista de posts", posts));
     }
 
-    // Obtener publicación por ID
+    // Obtener publicacion por ID
     @GetMapping("/{id}")
     public ResponseEntity<PostApiResponse> obtenerPost(@PathVariable Long id) {
         PostResponse post = postService.getPostById(id);
         return ResponseEntity.ok(new PostApiResponse("Post encontrado", post));
     }
 
-    // Editar publicación (incluye imagenUrl si se cambia)
+    // Editar publicacion
     @PutMapping("/{id}")
     public ResponseEntity<PostApiResponse> editarPost(@PathVariable Long id,
-                                                      @Valid @RequestBody PostUpdateRequest request) {
-        PostResponse updated = postService.updatePost(id, request);
-        return ResponseEntity.ok(new PostApiResponse("Post actualizado correctamente", updated));
+                                                      @Valid @RequestBody PostUpdateRequest request,
+                                                      HttpServletRequest httpRequest) {
+        HttpSession session = httpRequest.getSession(false);
+        if (session == null || session.getAttribute("AUTH_USER_ID") == null) {
+            return ResponseEntity.status(401).body(new PostApiResponse("No hay sesion activa", null));
+        }
+
+        UUID userId = (UUID) session.getAttribute("AUTH_USER_ID");
+        
+        try {
+            PostResponse updated = postService.updatePost(id, request, userId);
+            return ResponseEntity.ok(new PostApiResponse("Post actualizado correctamente", updated));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(403).body(new PostApiResponse(e.getMessage(), null));
+        }
     }
 
-    // Eliminar publicación (y su imagen en Supabase)
+    // Eliminar publicacion
     @DeleteMapping("/{id}")
-    public ResponseEntity<PostApiResponse> eliminarPost(@PathVariable Long id) {
-        postService.deletePost(id);
-        return ResponseEntity.ok(new PostApiResponse("Post eliminado correctamente", null));
+    public ResponseEntity<PostApiResponse> eliminarPost(@PathVariable Long id,
+                                                        HttpServletRequest httpRequest) {
+        HttpSession session = httpRequest.getSession(false);
+        if (session == null || session.getAttribute("AUTH_USER_ID") == null) {
+            return ResponseEntity.status(401).body(new PostApiResponse("No hay sesion activa", null));
+        }
+
+        UUID userId = (UUID) session.getAttribute("AUTH_USER_ID");
+
+        try {
+            postService.deletePost(id, userId);
+            return ResponseEntity.ok(new PostApiResponse("Post eliminado correctamente", null));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(403).body(new PostApiResponse(e.getMessage(), null));
+        }
     }
 }
