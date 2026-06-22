@@ -24,6 +24,7 @@ public class UploadController {
     private String supabaseKey;
 
     @PostMapping("/upload")
+    @SuppressWarnings("null") // Elimina las advertencias estrictas de Null Safety impuestas por el IDE
     public ResponseEntity<Map<String, String>> uploadFile(@RequestParam("file") MultipartFile file) {
         try {
             // Validación básica
@@ -59,6 +60,7 @@ public class UploadController {
 
             HttpEntity<byte[]> entity = new HttpEntity<>(file.getBytes(), headers);
 
+            // Se ejecuta la llamada de forma limpia con la anotación de supresión de nulos activa
             ResponseEntity<String> response = restTemplate.exchange(uploadUrl, HttpMethod.PUT, entity, String.class);
 
             if (response.getStatusCode().is2xxSuccessful()) {

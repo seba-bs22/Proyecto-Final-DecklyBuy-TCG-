@@ -25,83 +25,124 @@
 
     <dependencies>
 
-        <!-- Web -->
+        <!-- =================================================================
+           Dependencia para desarrollo web, manejo de peticiones HTTP y APIs REST.
+        ================================================================= -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
-        <!-- Seguridad -->
+        <!-- =================================================================
+           Dependencia para la seguridad del backend, autenticacion y CORS.
+        ================================================================= -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
 
-        <!-- Swagger -->
+        <!-- =================================================================
+           Dependencia para documentar y probar endpoints mediante Swagger UI.
+        ================================================================= -->
         <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
             <version>2.5.0</version>
         </dependency>
 
-        <!-- OAuth2 Google -->
+        <!-- =================================================================
+           Dependencia para gestionar el inicio de sesion con Google OAuth2.
+        ================================================================= -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-oauth2-client</artifactId>
         </dependency>
 
-        <!-- JPA -->
+        <!-- =================================================================
+           Dependencia para persistencia de datos y manejo de la base de datos (JPA).
+        ================================================================= -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>
         </dependency>
 
-        <!-- PostgreSQL -->
+        <!-- =================================================================
+           Dependencia del conector para la base de datos PostgreSQL.
+        ================================================================= -->
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
             <scope>runtime</scope>
         </dependency>
 
-        <!-- Base de datos en memoria -->
+        <!-- =================================================================
+           Dependencia para usar la base de datos volatil H2 en memoria.
+        ================================================================= -->
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
             <scope>runtime</scope>
         </dependency>
 
-        <!-- Lombok -->
+        <!-- =================================================================
+           Dependencia de Lombok para evitar escribir getters, setters y constructores.
+        ================================================================= -->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <optional>true</optional>
         </dependency>
 
-        <!-- Test -->
+        <!-- =================================================================
+           Dependencia para ejecutar pruebas de entorno unitarias y de integracion.
+        ================================================================= -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
 
-        <!-- Mail (nuevo) -->
+        <!-- =================================================================
+           Dependencia para la gestion y envio de correos electronicos (SMTP).
+        ================================================================= -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-mail</artifactId>
         </dependency>
 
+        <!-- =================================================================
+           Dependencia cliente HTTP para realizar llamadas externas (ej. Supabase).
+        ================================================================= -->
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
             <version>4.5.14</version>
         </dependency>
 
+        <!-- =================================================================
+           Dependencia de Spring AI para conectar el chat con el motor Ollama local.
+        ================================================================= -->
         <dependency>
-            <groupId>org.apache.httpcomponents</groupId>
-            <artifactId>httpclient</artifactId>
-            <version>4.5.14</version>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-ollama-spring-boot-starter</artifactId>
+            <version>1.0.0-M1</version>
         </dependency>
+
     </dependencies>
+
+    <!-- =================================================================
+       Repositorio oficial requerido para descargar la version de Spring AI.
+    ================================================================= -->
+    <repositories>
+        <repository>
+            <id>spring-milestones</id>
+            <name>Spring Milestones</name>
+            <url>https://repo.spring.io/milestone</url>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+    </repositories>
 
     <build>
         <plugins>
