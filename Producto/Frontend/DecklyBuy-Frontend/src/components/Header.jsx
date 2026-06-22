@@ -84,9 +84,10 @@ const Header = () => {
             <div className="perfil-dropdown">
               <Link to="/account">Ver mi perfil</Link>
               <Link to="/create-post">Crear publicación</Link>
-              
-              {/* AQUÍ INCORPORAMOS EL LINK FÍSICO DIRECTO A POSTS */}
               <Link to="/posts">Mis publicaciones</Link>
+              
+              {/* ACCESO DIRECTO A LA LISTA DE DESEOS */}
+              <Link to="/wishlist">Lista de deseos ❤️</Link>
               
               <button onClick={handleLogout} className="logout-btn">
                 Cerrar sesión

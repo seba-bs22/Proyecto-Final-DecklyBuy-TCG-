@@ -14,11 +14,14 @@ import Register from './pages/Register.jsx';
 import VerifyCode from './pages/VerifyCode.jsx';   
 import CreatePost from './pages/CreatePost.jsx';
 import Posts from './pages/Posts.jsx';   
-import EditPost from './pages/EditPost.jsx'; // Importación completa de la nueva página
+import EditPost from './pages/EditPost.jsx'; 
 import LoginSuccess from './pages/LoginSuccess.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 import ForgotPassword from './pages/ForgotPassword.jsx';
 import ResetPassword from './pages/ResetPassword.jsx';
+
+// IMPORTACIÓN CORREGIDA: Apunta exactamente a Wishlist.jsx
+import WishlistPage from './pages/Wishlist.jsx'; 
 
 import './style.css';
 
@@ -44,10 +47,13 @@ ReactDOM.createRoot(document.getElementById('root')).render(
             <Route path="categories" element={<Categories />} />
             <Route path="create-post" element={<CreatePost />} />
             <Route path="posts" element={<Posts />} /> 
-            <Route path="edit-post/:id" element={<EditPost />} /> {/* Ruta dinámica completa */}
+            <Route path="edit-post/:id" element={<EditPost />} /> 
             <Route path="offers" element={<Offers />} />
             <Route path="contact" element={<Contact />} />
             <Route path="account" element={<Account />} />
+            
+            {/* RUTA DE LA WISHLIST MAREADA COMO HIJA DE APP */}
+            <Route path="wishlist" element={<WishlistPage />} />
           </Route>
         </Route>
 
