@@ -20,8 +20,9 @@ import ProtectedRoute from './components/ProtectedRoute.jsx';
 import ForgotPassword from './pages/ForgotPassword.jsx';
 import ResetPassword from './pages/ResetPassword.jsx';
 
-// IMPORTACIÓN DEL NUEVO MERCADO GLOBAL
+// IMPORTACIÓN DEL NUEVO MERCADO GLOBAL Y DETALLE DE CARTA
 import Catalog from './pages/Catalog.jsx'; 
+import CardDetail from './pages/CardDetail.jsx'; // <-- 1. IMPORTAMOS LA NUEVA PÁGINA
 
 // IMPORTACIÓN DE LA WISHLIST
 import WishlistPage from './pages/Wishlist.jsx'; 
@@ -49,8 +50,11 @@ ReactDOM.createRoot(document.getElementById('root')).render(
             <Route path="home" element={<Home />} />
             <Route path="categories" element={<Categories />} />
             
-            {/* RUTA NUEVA: Catálogo del mercado global público */}
+            {/* Catálogo del mercado global público */}
             <Route path="catalog" element={<Catalog />} />
+
+            {/* 2. NUEVA RUTA: Detalle de la carta modelo con su listado de ofertas */}
+            <Route path="card/:cardId" element={<CardDetail />} />
 
             <Route path="create-post" element={<CreatePost />} />
             <Route path="posts" element={<Posts />} /> 
