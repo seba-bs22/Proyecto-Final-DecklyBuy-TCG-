@@ -3,40 +3,40 @@ package com.DecklyBuy.Backend.posts;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-/**
- * DTO para devolver información de un Post en respuestas de API.
- */
 public record PostResponse(
         Long id,
-        String nombre,
-        String edicion,
-        String numero,
+        String cardId,         
+        String nombre,         
+        String edicion,        
+        String numero,         
+        String cardImage,      
         Double precio,
         String estadoDetectado,
         Integer score,
         Double confidence,
-        String imagenUrl,
-        String categoriaCarta, // <-- 1. Agregado como parámetro principal del record
+        String imagenUrl,      
+        String categoriaCarta, 
         String descripcion,
         LocalDateTime fechaPublicacion,
         UUID userId,
         String nombreUsuario,
-        String nombreAutor,
+        String nombreAlign,
         String apellidoAutor
 ) {
-    // Constructor auxiliar que recibe la entidad Post
     public PostResponse(Post post) {
         this(
             post.getId(),
-            post.getNombre(),
-            post.getEdicion(),
-            post.getNumero(),
+            post.getCard() != null ? post.getCard().getId() : null,
+            post.getCard() != null ? post.getCard().getName() : null,
+            post.getCard() != null ? post.getCard().getEdicion() : null,
+            post.getCard() != null ? post.getCard().getLocalId() : null,
+            post.getCard() != null ? post.getCard().getImage() : null,
             post.getPrecio(),
             post.getEstadoDetectado(),
             post.getScore(),
             post.getConfidence(),
             post.getImagenUrl(),
-            post.getCategoriaCarta(), // <-- 2. Pasamos el valor desde la entidad
+            post.getCategoriaCarta(), 
             post.getDescripcion(),
             post.getFechaPublicacion(),
             post.getUser() != null ? post.getUser().getId() : null,

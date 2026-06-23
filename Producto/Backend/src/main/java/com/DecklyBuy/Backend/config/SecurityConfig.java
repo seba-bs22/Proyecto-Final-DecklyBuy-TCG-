@@ -37,6 +37,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 // 1. Permitir siempre las peticiones de pre-vuelo (CORS OPTIONS)
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                
                 // 2. Rutas públicas generales
                 .requestMatchers(
                     "/", "/login**", "/error",
@@ -44,8 +45,17 @@ public class SecurityConfig {
                     "/v3/api-docs/**",
                     "/api/ia/**", "/api/users/**", "/api/auth/**"
                 ).permitAll()
-                // 3. Rutas que requieren autenticación por sesión
-                .requestMatchers("/api/upload", "/api/posts/**").authenticated()
+                
+                // Permitir acceso público para VER las publicaciones (Tablón y Catálogo)
+                .requestMatchers(HttpMethod.GET, "/api/posts", "/api/posts/**").permitAll()
+                
+                // 3. Rutas de mutación que requieren estrictamente una sesión activa (JSESSIONID)
+                .requestMatchers(HttpMethod.POST, "/api/posts").authenticated()
+                .requestMatchers(HttpMethod.PUT, "/api/posts/**").authenticated()
+                .requestMatchers(HttpMethod.DELETE, "/api/posts/**").authenticated()
+                .requestMatchers("/api/upload").authenticated()
+                
+                // Cualquier otra ruta no especificada se maneja como pública
                 .anyRequest().permitAll()
             )
             .exceptionHandling(ex -> ex

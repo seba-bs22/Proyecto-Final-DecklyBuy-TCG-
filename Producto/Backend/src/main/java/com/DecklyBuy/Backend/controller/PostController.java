@@ -3,7 +3,6 @@ package com.DecklyBuy.Backend.controller;
 import com.DecklyBuy.Backend.posts.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import jakarta.validation.Valid;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -21,13 +20,24 @@ public class PostController {
         this.postService = postService;
     }
 
-    // Crear publicacion
+    // Crear publicacion (Sin @Valid para evitar el cuelgue por cascade)
     @PostMapping
-    public ResponseEntity<PostApiResponse> crearPost(@Valid @RequestBody PostRequest request,
+    public ResponseEntity<PostApiResponse> crearPost(@RequestBody PostRequest request,
                                                      HttpServletRequest httpRequest) {
         HttpSession session = httpRequest.getSession(false);
         if (session == null || session.getAttribute("AUTH_USER_ID") == null) {
             return ResponseEntity.status(401).body(new PostApiResponse("No hay sesion activa", null));
+        }
+
+        // Validaciones manuales ultraseguras
+        if (request.precio() == null || request.precio() <= 0) {
+            return ResponseEntity.badRequest().body(new PostApiResponse("El precio debe ser mayor a 0", null));
+        }
+        if (request.categoriaCarta() == null || request.categoriaCarta().isBlank()) {
+            return ResponseEntity.badRequest().body(new PostApiResponse("La categoría de la carta es obligatoria", null));
+        }
+        if (request.card() == null || request.card().getId() == null || request.card().getName() == null) {
+            return ResponseEntity.badRequest().body(new PostApiResponse("La información oficial de la carta está incompleta", null));
         }
 
         UUID userId = (UUID) session.getAttribute("AUTH_USER_ID");
@@ -35,7 +45,20 @@ public class PostController {
         return ResponseEntity.ok(new PostApiResponse("Post creado correctamente", saved));
     }
 
-    // Listar publicaciones
+    // Listar las publicaciones exclusivas del usuario autenticado actual
+    @GetMapping("/me")
+    public ResponseEntity<PostApiResponse> listarMisPosts(HttpServletRequest httpRequest) {
+        HttpSession session = httpRequest.getSession(false);
+        if (session == null || session.getAttribute("AUTH_USER_ID") == null) {
+            return ResponseEntity.status(401).body(new PostApiResponse("No hay sesion activa", null));
+        }
+
+        UUID userId = (UUID) session.getAttribute("AUTH_USER_ID");
+        List<PostResponse> misPosts = postService.getPostsByUser(userId);
+        return ResponseEntity.ok(new PostApiResponse("Mis posts recuperados exitosamente", misPosts));
+    }
+
+    // Listar publicaciones generales (Tablón público)
     @GetMapping
     public ResponseEntity<PostApiResponse> listarPosts() {
         List<PostResponse> posts = postService.getAllPosts();
@@ -52,7 +75,7 @@ public class PostController {
     // Editar publicacion
     @PutMapping("/{id}")
     public ResponseEntity<PostApiResponse> editarPost(@PathVariable Long id,
-                                                      @Valid @RequestBody PostUpdateRequest request,
+                                                      @RequestBody PostUpdateRequest request,
                                                       HttpServletRequest httpRequest) {
         HttpSession session = httpRequest.getSession(false);
         if (session == null || session.getAttribute("AUTH_USER_ID") == null) {
@@ -85,6 +108,17 @@ public class PostController {
             return ResponseEntity.ok(new PostApiResponse("Post eliminado correctamente", null));
         } catch (RuntimeException e) {
             return ResponseEntity.status(403).body(new PostApiResponse(e.getMessage(), null));
+        }
+    }
+
+    // Obtener todos los posts de venta asociados a una carta específica del catálogo
+    @GetMapping("/card/{cardId}")
+    public ResponseEntity<PostApiResponse> listarPostsPorCarta(@PathVariable String cardId) {
+        try {
+            List<PostResponse> posts = postService.getPostsByCardId(cardId);
+            return ResponseEntity.ok(new PostApiResponse("Publicaciones encontradas para la carta " + cardId, posts));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(new PostApiResponse("Error al buscar publicaciones: " + e.getMessage(), null));
         }
     }
 }

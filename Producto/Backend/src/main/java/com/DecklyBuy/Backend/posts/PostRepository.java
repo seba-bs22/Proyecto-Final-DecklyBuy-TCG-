@@ -2,15 +2,18 @@ package com.DecklyBuy.Backend.posts;
 
 import com.DecklyBuy.Backend.users.User;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.UUID;
 
+@Repository
 public interface PostRepository extends JpaRepository<Post, Long> {
 
-    // Buscar todos los posts de un usuario específico
     List<Post> findByUser(User user);
 
-    // Alternativa: buscar por userId directamente
     List<Post> findByUser_Id(UUID userId);
+
+    // Corregido con el guion bajo para mapear de forma explícita la propiedad ID dentro de Card
+    List<Post> findByCard_Id(String cardId);
 }

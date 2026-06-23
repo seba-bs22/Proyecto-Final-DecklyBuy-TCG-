@@ -1,6 +1,7 @@
 package com.DecklyBuy.Backend.posts;
 
 import com.DecklyBuy.Backend.users.User;
+import com.DecklyBuy.Backend.apicard.Card;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;
@@ -16,13 +17,6 @@ public class Post {
     private Long id;
 
     @Column(nullable = false)
-    @NotBlank(message = "El nombre es obligatorio")
-    private String nombre;
-
-    private String edicion;
-    private String numero;
-
-    @Column(nullable = false)
     @Positive(message = "El precio debe ser mayor a 0")
     private Double precio;
 
@@ -33,7 +27,7 @@ public class Post {
     @Column(name = "imagen_url")
     private String imagenUrl;
 
-    @Column(name = "categoria_carta", nullable = false) // <-- Columna física en Supabase
+    @Column(name = "categoria_carta", nullable = false)
     @NotBlank(message = "La categoría de la carta es obligatoria")
     private String categoriaCarta;
 
@@ -44,7 +38,10 @@ public class Post {
     @Column(name = "fecha_publicacion", nullable = false, updatable = false)
     private LocalDateTime fechaPublicacion;
 
-    // Relación con User
+    @ManyToOne(fetch = FetchType.EAGER, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @JoinColumn(name = "card_id", nullable = false)
+    private Card card;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     @com.fasterxml.jackson.annotation.JsonIgnoreProperties({"posts", "hibernateLazyInitializer", "handler"})
@@ -58,15 +55,6 @@ public class Post {
     // --- Getters y Setters ---
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
-
-    public String getNombre() { return nombre; }
-    public void setNombre(String nombre) { this.nombre = nombre; }
-
-    public String getEdicion() { return edicion; }
-    public void setEdicion(String edicion) { this.edicion = edicion; }
-
-    public String getNumero() { return numero; }
-    public void setNumero(String numero) { this.numero = numero; }
 
     public Double getPrecio() { return precio; }
     public void setPrecio(Double precio) { this.precio = precio; }
@@ -83,14 +71,17 @@ public class Post {
     public String getImagenUrl() { return imagenUrl; }
     public void setImagenUrl(String imagenUrl) { this.imagenUrl = imagenUrl; }
 
-    public String getCategoriaCarta() { return categoriaCarta; } // <-- Getter
-    public void setCategoriaCarta(String categoriaCarta) { this.categoriaCarta = categoriaCarta; } // <-- Setter
+    public String getCategoriaCarta() { return categoriaCarta; }
+    public void setCategoriaCarta(String categoriaCarta) { this.categoriaCarta = categoriaCarta; }
 
     public String getDescripcion() { return descripcion; }
     public void setDescripcion(String descripcion) { this.descripcion = descripcion; }
 
     public LocalDateTime getFechaPublicacion() { return fechaPublicacion; }
     public void setFechaPublicacion(LocalDateTime fechaPublicacion) { this.fechaPublicacion = fechaPublicacion; }
+
+    public Card getCard() { return card; }
+    public void setCard(Card card) { this.card = card; }
 
     public User getUser() { return user; }
     public void setUser(User user) { this.user = user; }
