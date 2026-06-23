@@ -57,6 +57,7 @@ public class PostService {
         post.setPrecio(request.precio());
         post.setEstadoDetectado(request.estadoDetectado());
         post.setImagenUrl(request.imagenUrl()); 
+        post.setCategoriaCarta(request.categoriaCarta()); // <-- Mapeado para creación
         post.setDescripcion(request.descripcion());
         post.setUser(user);
 
@@ -79,6 +80,7 @@ public class PostService {
         post.setNumero(request.numero());
         post.setPrecio(request.precio());
         post.setEstadoDetectado(request.estadoDetectado());
+        post.setCategoriaCarta(request.categoriaCarta()); // <-- Mapeado para edición
         post.setDescripcion(request.descripcion());
 
         if (request.imagenUrl() != null && !request.imagenUrl().isBlank()) {

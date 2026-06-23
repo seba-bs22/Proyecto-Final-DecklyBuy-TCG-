@@ -20,6 +20,9 @@ public record PostUpdateRequest(
 
         String estadoDetectado,
 
+        @NotBlank(message = "La categoría de la carta es obligatoria")
+        String categoriaCarta, // <-- Agregado para el flujo de edición
+
         @Size(max = 1000, message = "La descripción no puede superar los 1000 caracteres")
         String descripcion,
 

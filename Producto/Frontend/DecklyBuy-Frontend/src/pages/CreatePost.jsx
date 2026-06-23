@@ -14,6 +14,7 @@ const CreatePost = () => {
     edicion: "",
     numero: "",
     precio: "",
+    categoriaCarta: "", // Inicializado para el dropdown
     descripcion: ""
   });
 
@@ -81,10 +82,13 @@ const CreatePost = () => {
       setModal({ valid: false, mensaje: "Debes subir una imagen antes de publicar." });
       return;
     }
-    if (!formData.nombre || !formData.edicion || !formData.numero || !formData.precio || !formData.descripcion) {
+    
+    // Validación de todos los campos obligatorios incluyendo la categoría
+    if (!formData.nombre || !formData.edicion || !formData.numero || !formData.precio || !formData.categoriaCarta || !formData.descripcion) {
       setModal({ valid: false, mensaje: "Todos los campos son obligatorios." });
       return;
     }
+    
     if (!analysisResult) {
       setModal({ valid: false, mensaje: "Debes analizar la imagen antes de publicar." });
       return;
@@ -102,7 +106,6 @@ const CreatePost = () => {
 
       if (!uploadResponse.ok) {
         const uploadErr = await uploadResponse.json();
-        // MEJORA: Prioriza mostrar el mensaje de error explícito detallado por el Backend
         setModal({ valid: false, mensaje: uploadErr.error || uploadErr.mensaje || "Error al subir la imagen al servidor." });
         return;
       }
@@ -172,6 +175,46 @@ const CreatePost = () => {
 
           <label>Precio</label>
           <input type="number" name="precio" value={formData.precio} onChange={handleChange} required />
+
+          {/* MENÚ DESPLEGABLE ORGANIZADO PARA POKÉMON TCG */}
+          <label htmlFor="categoriaCarta">Clasificación de la Carta</label>
+          <select 
+            id="categoriaCarta"
+            name="categoriaCarta" 
+            value={formData.categoriaCarta} 
+            onChange={handleChange} 
+            required
+            className="select-categoria-carta"
+            style={{
+              width: "100%",
+              padding: "10px",
+              borderRadius: "4px",
+              border: "1px solid #ccc",
+              marginBottom: "15px",
+              background: "white",
+              fontSize: "1rem",
+              color: "#333"
+            }}
+          >
+            <option value="">-- Selecciona una opción --</option>
+            
+            <optgroup label="Pokémon (Línea Estándar)">
+              <option value="Basico">Pokémon Básico</option>
+              <option value="Fase 1">Pokémon Fase 1</option>
+              <option value="Fase 2">Pokémon Fase 2</option>
+            </optgroup>
+
+            <optgroup label="Pokémon (Especiales / Ultra Raros)">
+              <option value="ex">Pokémon ex</option>
+              <option value="V">Pokémon V</option>
+              <option value="VMAX">Pokémon VMAX</option>
+            </optgroup>
+
+            <optgroup label="Otros Tipos de Carta">
+              <option value="Trainer">Carta Trainer (Entrenador)</option>
+              <option value="Energia">Energía</option>
+            </optgroup>
+          </select>
 
           <label>Descripción</label>
           <textarea name="descripcion" value={formData.descripcion} onChange={handleChange} required />

@@ -33,6 +33,10 @@ public class Post {
     @Column(name = "imagen_url")
     private String imagenUrl;
 
+    @Column(name = "categoria_carta", nullable = false) // <-- Columna física en Supabase
+    @NotBlank(message = "La categoría de la carta es obligatoria")
+    private String categoriaCarta;
+
     @Column(length = 1000)
     @Size(max = 1000, message = "La descripción no puede superar los 1000 caracteres")
     private String descripcion;
@@ -78,6 +82,9 @@ public class Post {
 
     public String getImagenUrl() { return imagenUrl; }
     public void setImagenUrl(String imagenUrl) { this.imagenUrl = imagenUrl; }
+
+    public String getCategoriaCarta() { return categoriaCarta; } // <-- Getter
+    public void setCategoriaCarta(String categoriaCarta) { this.categoriaCarta = categoriaCarta; } // <-- Setter
 
     public String getDescripcion() { return descripcion; }
     public void setDescripcion(String descripcion) { this.descripcion = descripcion; }

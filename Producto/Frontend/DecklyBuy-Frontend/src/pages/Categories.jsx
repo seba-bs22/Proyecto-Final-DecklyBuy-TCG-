@@ -1,27 +1,39 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 
 const Categories = () => {
-  const opciones = [
-    "Pokémon básicos, Fase 1/2",
-    "Pokémon Ex, V, VMAX",
-    "Cartas de entrenador",
-    "Cartas de energía"
+  const navigate = useNavigate();
+
+  // Configuración de categorías mapeadas con sus valores reales de la Base de Datos
+  const categoriasConfig = [
+    {
+      titulo: "Pokémon básicos, Fase 1/2",
+      claseBg: "bg-pokemon",
+      valoresBD: ["Basico", "Fase 1", "Fase 2"]
+    },
+    {
+      titulo: "Pokémon Ex, V, VMAX",
+      claseBg: "bg-especiales",
+      valoresBD: ["ex", "V", "VMAX"]
+    },
+    {
+      titulo: "Cartas de entrenador",
+      claseBg: "bg-entrenador",
+      valoresBD: ["Trainer"]
+    },
+    {
+      titulo: "Cartas de energía",
+      claseBg: "bg-energia",
+      valoresBD: ["Energia"]
+    }
   ];
 
-  // función para asignar clase según categoría
-  const getClaseFondo = (opcion) => {
-    switch (opcion) {
-      case "Pokémon básicos, Fase 1/2":
-        return "bg-pokemon";
-      case "Pokémon Ex, V, VMAX":
-        return "bg-especiales";
-      case "Cartas de entrenador":
-        return "bg-entrenador";
-      case "Cartas de energía":
-        return "bg-energia";
-      default:
-        return "";
-    }
+  // Al hacer clic, viajamos al catálogo público enviando los filtros por la URL
+  const handleCategoryClick = (valoresBD) => {
+    const queryParams = valoresBD.join(",");
+    
+    // Apunta exactamente a tu nueva ruta protegida /catalog
+    navigate(`/catalog?categorias=${queryParams}`);
   };
 
   return (
@@ -31,14 +43,14 @@ const Categories = () => {
       </section>
 
       <section className="bloque-promos">
-        {opciones.map((opcion, i) => (
+        {categoriasConfig.map((cat, i) => (
           <div
             key={i}
-            className={`bloque-carta bloque-carta-categorias opcion-click bg-categoria ${getClaseFondo(opcion)}`}
-            onClick={() => console.log(opcion)}
+            className={`bloque-carta bloque-carta-categorias opcion-click bg-categoria ${cat.claseBg}`}
+            onClick={() => handleCategoryClick(cat.valoresBD)}
           >
             <div className="info-carta">
-              <h3>{opcion}</h3>
+              <h3>{cat.titulo}</h3>
             </div>
           </div>
         ))}

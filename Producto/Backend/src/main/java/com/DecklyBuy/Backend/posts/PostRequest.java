@@ -22,6 +22,8 @@ public record PostRequest(
         @NotBlank(message = "La URL de la imagen no puede estar vacía")
         String imagenUrl,
 
+        @NotBlank(message = "La categoría de la carta es obligatoria")
+        String categoriaCarta, // <-- Agregado de forma nativa en el record
 
         @Size(max = 1000, message = "La descripción no puede superar los 1000 caracteres")
         String descripcion

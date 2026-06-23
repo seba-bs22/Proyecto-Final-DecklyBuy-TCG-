@@ -16,6 +16,7 @@ public record PostResponse(
         Integer score,
         Double confidence,
         String imagenUrl,
+        String categoriaCarta, // <-- 1. Agregado como parámetro principal del record
         String descripcion,
         LocalDateTime fechaPublicacion,
         UUID userId,
@@ -35,6 +36,7 @@ public record PostResponse(
             post.getScore(),
             post.getConfidence(),
             post.getImagenUrl(),
+            post.getCategoriaCarta(), // <-- 2. Pasamos el valor desde la entidad
             post.getDescripcion(),
             post.getFechaPublicacion(),
             post.getUser() != null ? post.getUser().getId() : null,

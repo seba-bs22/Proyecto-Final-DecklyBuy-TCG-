@@ -20,7 +20,10 @@ import ProtectedRoute from './components/ProtectedRoute.jsx';
 import ForgotPassword from './pages/ForgotPassword.jsx';
 import ResetPassword from './pages/ResetPassword.jsx';
 
-// IMPORTACIÓN CORREGIDA: Apunta exactamente a Wishlist.jsx
+// IMPORTACIÓN DEL NUEVO MERCADO GLOBAL
+import Catalog from './pages/Catalog.jsx'; 
+
+// IMPORTACIÓN DE LA WISHLIST
 import WishlistPage from './pages/Wishlist.jsx'; 
 
 import './style.css';
@@ -45,6 +48,10 @@ ReactDOM.createRoot(document.getElementById('root')).render(
             <Route index element={<Navigate to="/home" replace />} />
             <Route path="home" element={<Home />} />
             <Route path="categories" element={<Categories />} />
+            
+            {/* RUTA NUEVA: Catálogo del mercado global público */}
+            <Route path="catalog" element={<Catalog />} />
+
             <Route path="create-post" element={<CreatePost />} />
             <Route path="posts" element={<Posts />} /> 
             <Route path="edit-post/:id" element={<EditPost />} /> 
@@ -52,12 +59,11 @@ ReactDOM.createRoot(document.getElementById('root')).render(
             <Route path="contact" element={<Contact />} />
             <Route path="account" element={<Account />} />
             
-            {/* RUTA DE LA WISHLIST MAREADA COMO HIJA DE APP */}
             <Route path="wishlist" element={<WishlistPage />} />
           </Route>
         </Route>
 
-        {/* Ruta por defecto: redirigir al login si no existe */}
+        {/* Ruta por defecto */}
         <Route path="*" element={<Navigate to="/login" replace />} />
 
       </Routes>
