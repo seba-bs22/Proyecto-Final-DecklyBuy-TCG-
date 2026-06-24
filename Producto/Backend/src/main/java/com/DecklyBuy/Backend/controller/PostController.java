@@ -36,6 +36,10 @@ public class PostController {
         if (request.categoriaCarta() == null || request.categoriaCarta().isBlank()) {
             return ResponseEntity.badRequest().body(new PostApiResponse("La categoría de la carta es obligatoria", null));
         }
+        // ─── VALIDACIÓN MANUAL AGREGADA PARA EL IDIOMA ───
+        if (request.idioma() == null || request.idioma().isBlank()) {
+            return ResponseEntity.badRequest().body(new PostApiResponse("El idioma de la carta es obligatorio", null));
+        }
         if (request.card() == null || request.card().getId() == null || request.card().getName() == null) {
             return ResponseEntity.badRequest().body(new PostApiResponse("La información oficial de la carta está incompleta", null));
         }
@@ -58,10 +62,16 @@ public class PostController {
         return ResponseEntity.ok(new PostApiResponse("Mis posts recuperados exitosamente", misPosts));
     }
 
-    // Listar publicaciones generales (Tablón público)
+    // ─── MODIFICADO: Listar publicaciones generales con Filtros Dinámicos ───
     @GetMapping
-    public ResponseEntity<PostApiResponse> listarPosts() {
-        List<PostResponse> posts = postService.getAllPosts();
+    public ResponseEntity<PostApiResponse> listarPosts(
+            @RequestParam(value = "categorias", required = false) String categoria,
+            @RequestParam(value = "estado", required = false) String estado,
+            @RequestParam(value = "ordenar", required = false) String ordenar,
+            @RequestParam(value = "buscar", required = false) String buscar) {
+        
+        // Delegamos los filtros al servicio para que haga la magia
+        List<PostResponse> posts = postService.getFilteredPosts(categoria, estado, ordenar, buscar);
         return ResponseEntity.ok(new PostApiResponse("Lista de posts", posts));
     }
 
@@ -95,7 +105,7 @@ public class PostController {
     // Eliminar publicacion
     @DeleteMapping("/{id}")
     public ResponseEntity<PostApiResponse> eliminarPost(@PathVariable Long id,
-                                                        HttpServletRequest httpRequest) {
+                                                         HttpServletRequest httpRequest) {
         HttpSession session = httpRequest.getSession(false);
         if (session == null || session.getAttribute("AUTH_USER_ID") == null) {
             return ResponseEntity.status(401).body(new PostApiResponse("No hay sesion activa", null));

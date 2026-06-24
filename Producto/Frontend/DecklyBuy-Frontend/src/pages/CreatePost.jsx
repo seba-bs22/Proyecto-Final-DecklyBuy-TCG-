@@ -17,11 +17,12 @@ const CreatePost = () => {
   // Estado para la vista previa de la imagen oficial de la API
   const [apiImagePreview, setApiImagePreview] = useState(null);
 
-  // Estados del formulario de la carta (Campos propios de la oferta de venta)
+  // Estados del formulario de la carta (AGREGADO: idioma inicializado vacío)
   const [formData, setFormData] = useState({
     precio: "",
     categoriaCarta: "", 
-    descripcion: ""
+    descripcion: "",
+    idioma: "" // <-- Agregado con éxito
   });
 
   // Estados espejo solo para pintar la interfaz visualmente
@@ -175,8 +176,9 @@ const CreatePost = () => {
       return;
     }
     
-    if (!formData.precio || !formData.categoriaCarta || !formData.descripcion) {
-      setModal({ valid: false, mensaje: "Todos los campos de la publicación son obligatorios." });
+    // MODIFICADO: Añadida la validación obligatoria de formData.idioma
+    if (!formData.precio || !formData.categoriaCarta || !formData.descripcion || !formData.idioma) {
+      setModal({ valid: false, mensaje: "Todos los campos de la publicación, incluyendo el idioma, son obligatorios." });
       return;
     }
     
@@ -210,10 +212,12 @@ const CreatePost = () => {
       const imageUrl = uploadJson.url; 
 
       // ─── OBJETO SINCRONIZADO CON LOS TIPOS DE DATOS EXACTOS DE JAVA ───
+      // MODIFICADO: Se inyecta la propiedad 'idioma' para que viaje al backend
       const postData = {
         precio: parseFloat(formData.precio), 
         categoriaCarta: formData.categoriaCarta,
         descripcion: formData.descripcion,
+        idioma: formData.idioma, // <-- Enviado de forma nativa
         estadoDetectado: analysisResult.estado ? String(analysisResult.estado) : null,
         score: analysisResult.score ? parseInt(analysisResult.score, 10) : null, 
         confidence: analysisResult.confidence ? parseFloat(analysisResult.confidence) : null, 
@@ -362,11 +366,14 @@ const CreatePost = () => {
 
           {/* Lado Derecho: Campos editables del Post + Outputs de la IA */}
           <div className="form-publicacion" style={{ flex: "2", minWidth: "300px" }}>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "15px" }}>
+            
+            {/* MODIFICADO: Ahora el layout usa un grid de 3 columnas para incluir el Idioma fluidamente */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "15px" }}>
               <div>
                 <label>Precio de Venta ($)</label>
                 <input type="number" name="precio" value={formData.precio} onChange={handleChange} required style={{ width: "100%", padding: "8px", border: "1px solid #ccc", borderRadius: "4px" }} />
               </div>
+              
               <div>
                 <label htmlFor="categoriaCarta">Clasificación Interna</label>
                 <select 
@@ -393,6 +400,28 @@ const CreatePost = () => {
                     <option value="Trainer">Carta Trainer (Entrenador)</option>
                     <option value="Energia">Energía</option>
                   </optgroup>
+                </select>
+              </div>
+
+              {/* AGREGADO: Desplegable Oficial con los Idiomas válidos del ecosistema Pokémon TCG */}
+              <div>
+                <label htmlFor="idioma">Idioma Oficial</label>
+                <select 
+                  id="idioma"
+                  name="idioma" 
+                  value={formData.idioma} 
+                  onChange={handleChange} 
+                  required
+                  style={{ width: "100%", padding: "9px", borderRadius: "4px", border: "1px solid #ccc", background: "white", color: "#333", fontSize: "14px" }}
+                >
+                  <option value="">-- Selecciona --</option>
+                  <option value="Español">Español 🇪🇸</option>
+                  <option value="Inglés">Inglés 🇺🇸</option>
+                  <option value="Japonés">Japonés 🇯🇵</option>
+                  <option value="Alemán">Alemán 🇩🇪</option>
+                  <option value="Francés">Francés 🇫🇷</option>
+                  <option value="Italiano">Italiano 🇮🇹</option>
+                  <option value="Coreano">Coreano 🇰🇷</option>
                 </select>
               </div>
             </div>

@@ -31,6 +31,11 @@ public class Post {
     @NotBlank(message = "La categoría de la carta es obligatoria")
     private String categoriaCarta;
 
+    // ─── NUEVO ATRIBUTO AGREGADO DE FORMA SEGURA ───
+    @Column(nullable = false)
+    @NotBlank(message = "El idioma de la carta es obligatorio")
+    private String idioma;
+
     @Column(length = 1000)
     @Size(max = 1000, message = "La descripción no puede superar los 1000 caracteres")
     private String descripcion;
@@ -47,9 +52,23 @@ public class Post {
     @com.fasterxml.jackson.annotation.JsonIgnoreProperties({"posts", "hibernateLazyInitializer", "handler"})
     private User user;
 
+    // ─── MODIFICADO: Ciclo de vida para asegurar Herencia Automática ───
     @PrePersist
     public void prePersist() {
         this.fechaPublicacion = LocalDateTime.now();
+        
+        // Traspasa la clasificación del post a la entidad Card al crear
+        if (this.card != null) {
+            this.card.setCategoriaCarta(this.categoriaCarta);
+        }
+    }
+
+    @PreUpdate
+    public void preUpdate() {
+        // Traspasa la clasificación del post a la entidad Card al actualizar/editar
+        if (this.card != null) {
+            this.card.setCategoriaCarta(this.categoriaCarta);
+        }
     }
 
     // --- Getters y Setters ---
@@ -73,6 +92,9 @@ public class Post {
 
     public String getCategoriaCarta() { return categoriaCarta; }
     public void setCategoriaCarta(String categoriaCarta) { this.categoriaCarta = categoriaCarta; }
+
+    public String getIdioma() { return idioma; }
+    public void setIdioma(String idioma) { this.idioma = idioma; }
 
     public String getDescripcion() { return descripcion; }
     public void setDescripcion(String descripcion) { this.descripcion = descripcion; }

@@ -34,7 +34,17 @@ const Catalog = () => {
         const result = await response.json();
 
         if (response.ok) {
-          setPosts(result.data || []);
+          // 🛠️ HERENCIA EN EL FRONT: Mantenemos tu inyección exacta sin alterar las propiedades del post
+          const datosHeredados = (result.data || []).map((post) => {
+            return {
+              ...post,
+              card: post.card 
+                ? { ...post.card, categoriaCarta: post.categoriaCarta } 
+                : { categoriaCarta: post.categoriaCarta }
+            };
+          });
+
+          setPosts(datosHeredados);
         } else {
           setError(result.message || "Error al cargar el catálogo.");
         }
@@ -74,10 +84,10 @@ const Catalog = () => {
     }).format(value);
   };
 
-  // CORREGIDO: Redirección directa al template oficial de la app
+  // Redirección directa al template oficial de la app
   const handleVerPublicaciones = (cardId) => {
     if (cardId) {
-      navigate(`/card/${cardId}`); // <-- Ruta limpia del frontend
+      navigate(`/card/${cardId}`); 
     }
   };
 
@@ -90,14 +100,20 @@ const Catalog = () => {
 
       {/* BARRA DE FILTROS AVANZADOS Y COMBINADOS */}
       <div style={{ background: "#f8fafc", padding: "20px", borderRadius: "12px", border: "1px solid #e2e8f0", marginBottom: "35px" }}>
+        
         {/* 1. Categorías de Cartas */}
         <div style={{ marginBottom: "15px" }}>
-          <span style={{ fontSize: "13px", fontWeight: "700", color: "#475569", display: "block", marginBottom: "8px", textAlign: "left" }}>FILTRAR POR TIPO/FASE:</span>
+          <span style={{ fontSize: "13px", fontWeight: "700", color: "#475569", display: "block", marginBottom: "8px", textAlign: "left" }}>FILTRAR POR CLASIFICACIÓN:</span>
           <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
             <button onClick={() => handleFiltro("categorias", "TODOS")} style={btnEstilo(!categoriasParam)}>✨ Todos</button>
-            <button onClick={() => handleFiltro("categorias", "Basico,Fase 1,Fase 2")} style={btnEstilo(categoriasParam === "Basico,Fase 1,Fase 2")}>🃏 Básicos / Fases</button>
-            <button onClick={() => handleFiltro("categorias", "ex,V,VMAX")} style={btnEstilo(categoriasParam === "ex,V,VMAX")}>🔥 ex / V / VMAX</button>
+            <button onClick={() => handleFiltro("categorias", "Basico")} style={btnEstilo(categoriasParam === "Basico")}>🃏 Básico</button>
+            <button onClick={() => handleFiltro("categorias", "Fase 1")} style={btnEstilo(categoriasParam === "Fase 1")}>🔺 Fase 1</button>
+            <button onClick={() => handleFiltro("categorias", "Fase 2")} style={btnEstilo(categoriasParam === "Fase 2")}>🔥 Fase 2</button>
+            <button onClick={() => handleFiltro("categorias", "ex")} style={btnEstilo(categoriasParam === "ex")}>✨ ex</button>
+            <button onClick={() => handleFiltro("categorias", "V")} style={btnEstilo(categoriasParam === "V")}>⚡ Pokémon V</button>
+            <button onClick={() => handleFiltro("categorias", "VMAX")} style={btnEstilo(categoriasParam === "VMAX")}>💥 VMAX</button>
             <button onClick={() => handleFiltro("categorias", "Trainer")} style={btnEstilo(categoriasParam === "Trainer")}>🛡️ Entrenadores</button>
+            <button onClick={() => handleFiltro("categorias", "Energia")} style={btnEstilo(categoriasParam === "Energia")}>🔋 Energías</button>
           </div>
         </div>
 
@@ -121,7 +137,7 @@ const Catalog = () => {
           <div style={{ flex: "1", minWidth: "200px", textAlign: "left" }}>
             <label style={{ fontSize: "13px", fontWeight: "700", color: "#475569", display: "block", marginBottom: "6px" }}>ORDENAR POR:</label>
             <select 
-              value={navbarParam => ordenarParam || "TODOS"} 
+              value={ordenarParam || "TODOS"} 
               onChange={(e) => handleFiltro("ordenar", e.target.value)}
               style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #cbd5e1", background: "#fff", fontWeight: "500", fontSize: "14px" }}
             >
@@ -182,7 +198,7 @@ const Catalog = () => {
                   style={{ maxHeight: "100%", maxWidth: "100%", objectFit: "contain" }} 
                 />
                 <span style={{ position: "absolute", bottom: "12px", left: "12px", fontSize: "10px", fontWeight: "700", color: "#1e40af", background: "#dbeafe", padding: "4px 8px", borderRadius: "6px" }}>
-                  {post.categoriaCarta || "Pokémon"}
+                  {post.card?.categoriaCarta || "Pokémon"}
                 </span>
               </div>
 

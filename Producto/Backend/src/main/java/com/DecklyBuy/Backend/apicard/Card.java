@@ -21,6 +21,9 @@ public class Card {
 
     private String image; // URL de la imagen oficial
 
+    @Column(name = "categoria_carta") // Mismo nombre de columna o el que prefieras
+    private String categoriaCarta;
+
     // Constructor vacío obligatorio para JPA
     public Card() {}
 
@@ -39,4 +42,7 @@ public class Card {
 
     public String getImage() { return image; }
     public void setImage(String image) { this.image = image; }
+
+    public String getCategoriaCarta() { return categoriaCarta; }
+    public void setCategoriaCarta(String categoriaCarta) { this.categoriaCarta = categoriaCarta; }
 }

@@ -21,9 +21,11 @@ public record PostUpdateRequest(
 
         String imagenUrl, 
 
-        String categoriaCarta
+        String categoriaCarta,
+
+        // ─── PARÁMETRO AGREGADO PARA ESTABILIZAR EL SERVICE EN LA EDICIÓN ───
+        String idioma
 ) {
-    // Sub-clase DTO estática para transferir los datos de la carta de forma limpia al actualizar
     public static class CardDto {
         private String id;
         private String name;
