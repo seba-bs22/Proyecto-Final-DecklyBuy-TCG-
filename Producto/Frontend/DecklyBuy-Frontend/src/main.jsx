@@ -22,55 +22,59 @@ import ResetPassword from './pages/ResetPassword.jsx';
 
 // IMPORTACIÓN DEL NUEVO MERCADO GLOBAL Y DETALLE DE CARTA
 import Catalog from './pages/Catalog.jsx'; 
-import CardDetail from './pages/CardDetail.jsx'; // <-- 1. IMPORTAMOS LA NUEVA PÁGINA
+import CardDetail from './pages/CardDetail.jsx'; 
 
 // IMPORTACIÓN DE LA WISHLIST
 import WishlistPage from './pages/Wishlist.jsx'; 
+
+// 🛒 IMPORTACIONES COMPLETAS DEL CARRITO (CON EL PROVIDER QUE FALTABA)
+import { CartProvider } from './context/CartContext.jsx'; // <-- ¡Agregado para evitar el pantallazo en blanco!
+import Cart from './pages/Cart.jsx';
 
 import './style.css';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <BrowserRouter>
-      <Routes>
+      <CartProvider> {/* Envolviendo el árbol correctamente */}
+        <Routes>
 
-        {/* Rutas públicas */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/login-verify" element={<LoginVerify />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/verify-code" element={<VerifyCode />} />
-        <Route path="/login-success" element={<LoginSuccess />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/reset-password/:token" element={<ResetPassword />} />
+          {/* Rutas públicas */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/login-verify" element={<LoginVerify />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/verify-code" element={<VerifyCode />} />
+          <Route path="/login-success" element={<LoginSuccess />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password/:token" element={<ResetPassword />} />
 
-        {/* Rutas protegidas */}
-        <Route element={<ProtectedRoute />}>
-          <Route path="/" element={<App />}>
-            <Route index element={<Navigate to="/home" replace />} />
-            <Route path="home" element={<Home />} />
-            <Route path="categories" element={<Categories />} />
-            
-            {/* Catálogo del mercado global público */}
-            <Route path="catalog" element={<Catalog />} />
+          {/* Rutas protegidas */}
+          <Route element={<ProtectedRoute />}>
+            <Route path="/" element={<App />}>
+              <Route index element={<Navigate to="/home" replace />} />
+              <Route path="home" element={<Home />} />
+              <Route path="categories" element={<Categories />} />
+              <Route path="catalog" element={<Catalog />} />
+              <Route path="card/:cardId" element={<CardDetail />} />
+              
+              {/* Ruta física del carrito */}
+              <Route path="carrito" element={<Cart />} />
 
-            {/* 2. NUEVA RUTA: Detalle de la carta modelo con su listado de ofertas */}
-            <Route path="card/:cardId" element={<CardDetail />} />
-
-            <Route path="create-post" element={<CreatePost />} />
-            <Route path="posts" element={<Posts />} /> 
-            <Route path="edit-post/:id" element={<EditPost />} /> 
-            <Route path="offers" element={<Offers />} />
-            <Route path="contact" element={<Contact />} />
-            <Route path="account" element={<Account />} />
-            
-            <Route path="wishlist" element={<WishlistPage />} />
+              <Route path="create-post" element={<CreatePost />} />
+              <Route path="posts" element={<Posts />} /> 
+              <Route path="edit-post/:id" element={<EditPost />} /> 
+              <Route path="offers" element={<Offers />} />
+              <Route path="contact" element={<Contact />} />
+              <Route path="account" element={<Account />} />
+              <Route path="wishlist" element={<WishlistPage />} />
+            </Route>
           </Route>
-        </Route>
 
-        {/* Ruta por defecto */}
-        <Route path="*" element={<Navigate to="/login" replace />} />
+          {/* Ruta por defecto */}
+          <Route path="*" element={<Navigate to="/login" replace />} />
 
-      </Routes>
+        </Routes>
+      </CartProvider>
     </BrowserRouter>
   </React.StrictMode>
 );

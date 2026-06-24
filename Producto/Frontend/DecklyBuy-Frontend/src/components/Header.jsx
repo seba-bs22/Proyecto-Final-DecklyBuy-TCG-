@@ -1,14 +1,17 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
+import { useCart } from '../context/CartContext'; // 🛒 Importamos el hook del carrito
 
 const Header = () => {
   const [open, setOpen] = useState(false);
   const [busqueda, setBusqueda] = useState("");
-  const [sugerencias, setSugerencias] = useState([]); // <-- Guardar las 4 cartas sugeridas
-  const [mostrarSugerencias, setMostrarSugerencias] = useState(false); // <-- Controlar visibilidad
+  const [sugerencias, setSugerencias] = useState([]); 
+  const [mostrarSugerencias, setMostrarSugerencias] = useState(false); 
+  
+  const { getCartCount } = useCart(); // 🔥 Extraemos la función que cuenta las cartas en tiempo real
   
   const menuRef = useRef(null);
-  const buscadorRef = useRef(null); // <-- Ref para cerrar las sugerencias si hacen clic fuera
+  const buscadorRef = useRef(null); 
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -47,16 +50,13 @@ const Header = () => {
       }
 
       try {
-        // Llamamos a tu endpoint pasándole lo que el usuario escribe
         const response = await fetch(`https://localhost:8080/api/posts?buscar=${encodeURIComponent(busqueda.trim())}`, {
           credentials: "include"
         });
         const result = await response.json();
         
-        // Obtenemos los datos puros
         const listaPosts = result.data || result || [];
 
-        // Filtramos nombres únicos para que no salgan cartas repetidas en las sugerencias
         const cartasUnicas = [];
         const nombresVistos = new Set();
 
@@ -65,21 +65,19 @@ const Header = () => {
             nombresVistos.add(post.nombre.toLowerCase());
             cartasUnicas.push(post);
           }
-          if (cartasUnicas.length === 4) break; // Limitamos estrictamente a 4 sugerencias
+          if (cartasUnicas.length === 4) break; 
         }
 
         setSugerencias(cartasUnicas);
       } catch (error) {
-        console.error("Error obteniendo sugerencias dinámicas:", error);
+        console.error("Error obtuvo sugerencias dinámicas:", error);
       }
     };
 
-    // Pequeño debounce para no saturar al servidor en cada tecla
     const timeoutId = setTimeout(obtenerSugerencias, 300);
     return () => clearTimeout(timeoutId);
   }, [busqueda]);
 
-  // Función ejecutora al presionar el botón Buscar o dar Enter
   const handleBuscar = (e) => {
     if (e) e.preventDefault();
     setMostrarSugerencias(false);
@@ -91,15 +89,10 @@ const Header = () => {
     }
   };
 
-  // Al hacer clic directo en una sugerencia de la lista
   const handleSeleccionarSugerencia = (post) => {
     setBusqueda(post.nombre);
     setMostrarSugerencias(false);
-    // Opción A: Ir al catálogo filtrado por ese nombre exacto
     navigate(`/catalog?buscar=${encodeURIComponent(post.nombre)}`);
-    
-    // Opción B (Si prefieres saltar directo a las publicaciones de esa ID):
-    // navigate(`/api/posts/card/${post.cardId}`);
   };
 
   const handleLogout = async () => {
@@ -173,7 +166,6 @@ const Header = () => {
                   onMouseEnter={(e) => e.currentTarget.style.background = "#f8fafc"}
                   onMouseLeave={(e) => e.currentTarget.style.background = "#ffffff"}
                 >
-                  {/* Mini miniatura de la carta oficial */}
                   <img 
                     src={post.cardImage || "https://via.placeholder.com/35x50?text=TCG"} 
                     alt={post.nombre} 
@@ -189,27 +181,70 @@ const Header = () => {
           )}
         </div>
 
-        {/* PERFIL */}
-        <div className="perfil-container" ref={menuRef}>
-          <button className="perfil-btn" onClick={(e) => { e.stopPropagation(); setOpen(!open); }}>
-            <img src={userImage} alt="perfil" className="perfil-img" />
-            <span>{userName}</span>
-          </button>
+        {/* 🛠️ CONTENEDOR DERECHO AGRUPADO: CARRITO + PERFIL */}
+        <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
+          
+          {/* 🛒 ENLACE DEL CARRITO COMO BOTÓN ESTILIZADO */}
+          <Link 
+            to="/carrito" 
+            style={{ 
+              display: "flex", 
+              alignItems: "center", 
+              gap: "6px", 
+              textDecoration: "none", 
+              color: "#1e293b", 
+              fontWeight: "bold",
+              fontSize: "14px",
+              background: "#f1f5f9",
+              padding: "8px 14px",
+              borderRadius: "20px",
+              transition: "background 0.2s"
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.background = "#e2e8f0"}
+            onMouseLeave={(e) => e.currentTarget.style.background = "#f1f5f9"}
+          >
+            <span>🛒</span>
+            {getCartCount() > 0 && (
+              <span style={{
+                background: "#ef4444",
+                color: "#ffffff",
+                fontSize: "11px",
+                borderRadius: "50%",
+                width: "18px",
+                height: "18px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontWeight: "bold"
+              }}>
+                {getCartCount()}
+              </span>
+            )}
+          </Link>
 
-          {open && (
-            <div className="perfil-dropdown">
-              <Link to="/account">Ver mi perfil</Link>
-              <Link to="/create-post">Crear publicación</Link>
-              <Link to="/posts">Mis publicaciones</Link>
-              <Link to="/wishlist">Lista de deseos</Link>
-              <button onClick={handleLogout} className="logout-btn">Cerrar sesión</button>
-            </div>
-          )}
+          {/* COMPONENTE DE PERFIL ORIGINAL */}
+          <div className="perfil-container" ref={menuRef}>
+            <button className="perfil-btn" onClick={(e) => { e.stopPropagation(); setOpen(!open); }}>
+              <img src={userImage} alt="perfil" className="perfil-img" />
+              <span>{userName}</span>
+            </button>
+
+            {open && (
+              <div className="perfil-dropdown">
+                <Link to="/account">Ver mi perfil</Link>
+                <Link to="/create-post">Crear publicación</Link>
+                <Link to="/posts">Mis publicaciones</Link>
+                <Link to="/wishlist">Lista de deseos</Link>
+                <button onClick={handleLogout} className="logout-btn">Cerrar sesión</button>
+              </div>
+            )}
+          </div>
+
         </div>
 
       </div>
 
-      {/* NAV */}
+      {/* NAV ORIGINAL (Vuelve a sus 4 puntos limpios, sin superposiciones) */}
       <nav>
         <ul className="barra-navegacion">
           <li><Link to="/home" className={location.pathname === "/home" ? "active" : ""}>INICIO</Link></li>

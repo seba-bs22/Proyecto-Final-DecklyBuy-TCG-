@@ -1,0 +1,13 @@
+package com.DecklyBuy.Backend.cart;
+
+import com.DecklyBuy.Backend.users.User;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+import java.util.Optional;
+
+@Repository
+public interface CartRepository extends JpaRepository<Cart, Long> {
+    
+    // Busca el carrito amarrado al usuario de la sesión
+    Optional<Cart> findByUsuario(User usuario);
+}

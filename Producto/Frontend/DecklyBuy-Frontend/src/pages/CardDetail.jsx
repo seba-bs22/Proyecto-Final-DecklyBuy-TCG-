@@ -23,6 +23,9 @@ const CardDetail = () => {
   const [ofertasOriginales, setOfertasOriginales] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // 💖 Mapeo dinámico: { [postId]: true/false } basado en tu BD
+  const [wishlist, setWishlist] = useState({});
+
   // Estados de filtros locales
   const [filtroIdioma, setFiltroIdioma] = useState("TODOS");
   const [filtroEstado, setFiltroEstado] = useState("TODOS");
@@ -32,15 +35,34 @@ const CardDetail = () => {
     const fetchDatosCarta = async () => {
       setLoading(true);
       try {
-        const [resOfertas, resApiOficial] = await Promise.all([
+        // Ejecutamos en paralelo la consulta de ofertas, API TCGdex y favoritos de la sesión
+        const [resOfertas, resApiOficial, resWishlist] = await Promise.all([
           fetch(`https://localhost:8080/api/posts/card/${cardId}`, { credentials: "include" }),
-          fetch(`https://api.tcgdex.net/v2/en/cards/${cardId}`)
+          fetch(`https://api.tcgdex.net/v2/en/cards/${cardId}`),
+          fetch(`https://localhost:8080/api/wishlist`, { credentials: "include" }).catch(() => null)
         ]);
 
+        // 1. Procesar ofertas del inventario local
         const resultOfertas = await resOfertas.json();
         const listaOfertas = resultOfertas.data || resultOfertas || [];
         setOfertasOriginales(listaOfertas);
 
+        // 2. Sincronizar corazones guardados previamente en tu entidad Wishlist
+        if (resWishlist && resWishlist.ok) {
+          const wishlistData = await resWishlist.json();
+          const wishlistMap = {};
+          
+          if (Array.isArray(wishlistData)) {
+            wishlistData.forEach(item => {
+              if (item?.post?.id) {
+                wishlistMap[item.post.id] = true;
+              }
+            });
+          }
+          setWishlist(wishlistMap);
+        }
+
+        // 3. Procesar info de la API externa
         if (resApiOficial.ok) {
           const dataOficial = await resApiOficial.json();
           setCartaOficial({
@@ -69,7 +91,7 @@ const CardDetail = () => {
         }
       } catch (error) {
         console.error("Error cargando detalles de la carta:", error);
-      } finally { // <-- CORREGIDO AQUÍ (con doble 'l')
+      } finally {
         setLoading(false);
       }
     };
@@ -77,7 +99,64 @@ const CardDetail = () => {
     fetchDatosCarta();
   }, [cardId]);
 
-  // Lógica de filtrado dinámico optimizada con useMemo (Evita renders duplicados)
+  // 🔗 ACCIONES DIRECTAS CON TU WishlistController
+  const toggleWishlist = async (postId) => {
+    const estaEnFavoritos = !!wishlist[postId];
+
+    try {
+      if (estaEnFavoritos) {
+        const response = await fetch(`https://localhost:8080/api/wishlist/remove/${postId}`, {
+          method: "DELETE",
+          credentials: "include"
+        });
+
+        if (response.ok) {
+          setWishlist(prev => ({ ...prev, [postId]: false }));
+        } else if (response.status === 401) {
+          alert("Debes iniciar sesión para modificar tu lista de deseos.");
+        } else {
+          alert("No se pudo quitar de la lista de deseos.");
+        }
+      } else {
+        const response = await fetch(`https://localhost:8080/api/wishlist/add/${postId}`, {
+          method: "POST",
+          credentials: "include"
+        });
+
+        if (response.ok) {
+          setWishlist(prev => ({ ...prev, [postId]: true }));
+        } else if (response.status === 401) {
+          alert("Por favor, inicia sesión para añadir cartas a tu lista de deseos.");
+        } else {
+          alert("No se pudo agregar a la lista de deseos.");
+        }
+      }
+    } catch (error) {
+      console.error("Error al conectar con el endpoint de la lista de deseos:", error);
+    }
+  };
+
+  // 🛒 AGREGAR AL CARRITO
+  const handleAddToCart = async (postId) => {
+    try {
+      const response = await fetch(`https://localhost:8080/api/cart/add/${postId}`, {
+        method: "POST",
+        credentials: "include"
+      });
+
+      if (response.ok) {
+        alert("¡Carta añadida al carrito con éxito! 🛒");
+      } else if (response.status === 401) {
+        alert("Por favor, inicia sesión para añadir productos al carrito.");
+      } else {
+        alert("No se pudo añadir al carrito. Puede que no quede stock disponible.");
+      }
+    } catch (error) {
+      console.error("Error al añadir al carrito:", error);
+    }
+  };
+
+  // Lógica de filtrado con useMemo
   const ofertasFiltradas = useMemo(() => {
     let resultado = [...ofertasOriginales];
 
@@ -106,8 +185,6 @@ const CardDetail = () => {
   if (loading) {
     return <div style={{ textAlign: "center", padding: "50px", color: "#64748b" }}>🔄 Desplegando hoja de datos e inventario...</div>;
   }
-
-  const esTrainer = cartaOficial?.categoriaCarta !== "Pokemon";
 
   return (
     <main style={{ maxWidth: "1100px", margin: "0 auto", padding: "30px 20px", fontFamily: "sans-serif", textAlign: "left" }}>
@@ -149,7 +226,6 @@ const CardDetail = () => {
               </p>
             )}
 
-            {/* EFECTO DIRECTO (Para cartas Trainer / Energy de TCGdex) */}
             {cartaOficial.effect && (
               <div style={{ marginTop: "15px", paddingTop: "15px", borderTop: "1px solid #e2e8f0" }}>
                 <strong style={{ display: "block", fontSize: "0.85rem", color: "#475569", marginBottom: "6px", textTransform: "uppercase" }}>📜 Efecto de la Carta:</strong>
@@ -159,7 +235,6 @@ const CardDetail = () => {
               </div>
             )}
 
-            {/* TEXTO DE DESCRIPCIÓN OFICIAL (Flavor text de Pokémon) */}
             {cartaOficial.description && (
               <div style={{ margin: "15px 0 0 0", paddingTop: "15px", borderTop: !cartaOficial.effect ? "1px solid #e2e8f0" : "none" }}>
                 <strong style={{ display: "block", fontSize: "0.85rem", color: "#475569", marginBottom: "4px", textTransform: "uppercase" }}>📝 Descripción Pokédex:</strong>
@@ -169,7 +244,6 @@ const CardDetail = () => {
               </div>
             )}
 
-            {/* ATAQUES / MOVIMIENTOS (Para Pokémon) */}
             {cartaOficial.attacks?.length > 0 && (
               <div style={{ marginTop: "15px", paddingTop: "15px", borderTop: "1px solid #e2e8f0" }}>
                 <h4 style={{ margin: "0 0 10px 0", fontSize: "0.95rem", color: "#1e293b", fontWeight: "700" }}>⚔️ Movimientos Oficiales:</h4>
@@ -194,7 +268,7 @@ const CardDetail = () => {
         </section>
       )}
 
-      {/* SECCIÓN 2: BARRA DE FILTROS EXCLUSIVA */}
+      {/* SECCIÓN 2: BARRA DE FILTROS */}
       <section style={{ marginBottom: "20px" }}>
         <h2 style={{ fontSize: "1.4rem", color: "#0f172a", marginBottom: "15px", fontWeight: "700" }}>🛒 Ofertas disponibles en el mercado</h2>
         <div style={{ display: "flex", gap: "15px", flexWrap: "wrap", background: "#ffffff", padding: "15px", borderRadius: "8px", border: "1px solid #e2e8f0" }}>
@@ -236,7 +310,7 @@ const CardDetail = () => {
         </div>
       </section>
 
-      {/* SECCIÓN 3: LISTADO DE PUBLICACIONES FILTRADAS */}
+      {/* SECCIÓN 3: TABLA DE PUBLICACIONES */}
       <section style={{ border: "1px solid #e2e8f0", borderRadius: "12px", overflow: "hidden", background: "#fff" }}>
         {ofertasFiltradas.length === 0 ? (
           <div style={{ padding: "40px", textAlign: "center", color: "#94a3b8" }}>
@@ -255,44 +329,94 @@ const CardDetail = () => {
                 </tr>
               </thead>
               <tbody>
-                {ofertasFiltradas.map((oferta) => (
-                  <tr key={oferta.id} style={{ borderBottom: "1px solid #f1f5f9", transition: "background 0.2s" }} onMouseEnter={(e) => e.currentTarget.style.background = "#f8fafc"} onMouseLeave={(e) => e.currentTarget.style.background = "none"}>
-                    
-                    <td style={tdEstilo}>
-                      <div style={{ fontWeight: "600", color: "#0f172a" }}>{oferta.usuarioNombre || "Vendedor Deckly"}</div>
-                      <div style={{ fontSize: "12px", color: "#64748b" }}>Chile</div>
-                    </td>
+                {ofertasFiltradas.map((oferta) => {
+                  const estaEnWishlist = !!wishlist[oferta.id];
+                  return (
+                    <tr key={oferta.id} style={{ borderBottom: "1px solid #f1f5f9", transition: "background 0.2s" }} onMouseEnter={(e) => e.currentTarget.style.background = "#f8fafc"} onMouseLeave={(e) => e.currentTarget.style.background = "none"}>
+                      
+                      <td style={tdEstilo}>
+                        <div style={{ fontWeight: "600", color: "#0f172a" }}>{oferta.usuarioNombre || "Vendedor Deckly"}</div>
+                        <div style={{ fontSize: "12px", color: "#64748b" }}>Chile</div>
+                      </td>
 
-                    <td style={tdEstilo}>
-                      <span style={{ fontWeight: "600", color: "#334155" }}>
-                        {MAPA_IDIOMAS[oferta.idioma] || `🌐 ${oferta.idioma}`}
-                      </span>
-                    </td>
-
-                    <td style={tdEstilo}>
-                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                        <span style={{ fontSize: "13px", fontWeight: "700", color: "#1e293b" }}>{oferta.estadoDetectado || "NM"}</span>
-                        <span style={{ fontSize: "11px", fontWeight: "700", color: "#166534", background: "#dcfce7", padding: "2px 6px", borderRadius: "4px" }}>
-                          Imágenes IA: {oferta.score || 0}/10
+                      <td style={tdEstilo}>
+                        <span style={{ fontWeight: "600", color: "#334155" }}>
+                          {MAPA_IDIOMAS[oferta.idioma] || `🌐 ${oferta.idioma}`}
                         </span>
-                      </div>
-                    </td>
+                      </td>
 
-                    <td style={{ ...tdEstilo, fontSize: "16px", fontWeight: "700", color: "#b91c1c" }}>
-                      {formatCLP(oferta.precio)}
-                    </td>
+                      <td style={tdEstilo}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                          <span style={{ fontSize: "13px", fontWeight: "700", color: "#1e293b" }}>{oferta.estadoDetectado || "NM"}</span>
+                          <span style={{ fontSize: "11px", fontWeight: "700", color: "#166534", background: "#dcfce7", padding: "2px 6px", borderRadius: "4px" }}>
+                            Imágenes IA: {oferta.score || 0}/10
+                          </span>
+                        </div>
+                      </td>
 
-                    <td style={{ ...tdEstilo, textAlign: "center" }}>
-                      <button 
-                        onClick={() => navigate(`/checkout/${oferta.id}`)}
-                        style={{ background: "#2563eb", color: "#fff", border: "none", padding: "8px 16px", borderRadius: "6px", fontWeight: "600", cursor: "pointer", fontSize: "13px" }}
-                      >
-                        Comprar
-                      </button>
-                    </td>
+                      <td style={{ ...tdEstilo, fontSize: "16px", fontWeight: "700", color: "#b91c1c" }}>
+                        {formatCLP(oferta.precio)}
+                      </td>
 
-                  </tr>
-                ))}
+                      <td style={{ ...tdEstilo, textAlign: "center" }}>
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
+                          
+                          {/* ❤️ BOTÓN LISTA DE DESEOS */}
+                          <button
+                            onClick={() => toggleWishlist(oferta.id)}
+                            title={estaEnWishlist ? "Quitar de la lista de deseos" : "Añadir a la lista de deseos"}
+                            style={{
+                              background: estaEnWishlist ? "#ffe4e6" : "#f1f5f9",
+                              border: estaEnWishlist ? "1px solid #fecdd3" : "1px solid #cbd5e1",
+                              borderRadius: "6px",
+                              padding: "8px 10px",
+                              cursor: "pointer",
+                              fontSize: "14px",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              transition: "all 0.2s"
+                            }}
+                          >
+                            {estaEnWishlist ? "❤️" : "🤍"}
+                          </button>
+
+                          {/* 🛒 BOTÓN AGREGAR AL CARRITO */}
+                          <button
+                            onClick={() => handleAddToCart(oferta.id)}
+                            title="Añadir al Carrito"
+                            style={{
+                              background: "#f1f5f9",
+                              border: "1px solid #cbd5e1",
+                              borderRadius: "6px",
+                              padding: "8px 12px",
+                              cursor: "pointer",
+                              fontSize: "14px",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              transition: "all 0.2s"
+                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.background = "#e2e8f0"}
+                            onMouseLeave={(e) => e.currentTarget.style.background = "#f1f5f9"}
+                          >
+                            🛒
+                          </button>
+
+                          {/* BOTÓN COMPRAR */}
+                          <button 
+                            onClick={() => navigate(`/checkout/${oferta.id}`)}
+                            style={{ background: "#2563eb", color: "#fff", border: "none", padding: "8px 16px", borderRadius: "6px", fontWeight: "600", cursor: "pointer", fontSize: "13px" }}
+                          >
+                            Comprar
+                          </button>
+
+                        </div>
+                      </td>
+
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
