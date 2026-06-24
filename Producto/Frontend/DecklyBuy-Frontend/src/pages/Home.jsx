@@ -31,7 +31,8 @@ const Home = () => {
         const result = await response.json();
         
         let dataArray = result.dataResponse || result.data || result || [];
-        setPostsRecientes(dataArray.slice(0, 3)); 
+        // 🛠️ MODIFICADO: Ahora tomamos las primeras 8 publicaciones para rellenar 2 filas de 4
+        setPostsRecientes(dataArray.slice(0, 8)); 
       } catch (error) {
         console.error("Error cargando cartas recientes en Home:", error);
       } finally {
@@ -97,17 +98,17 @@ const Home = () => {
             No hay publicaciones recientes en este momento.
           </div>
         ) : (
-          /* Nueva cuadrícula nativa, responsiva y cuadrada */
+          /* 🛠️ MODIFICADO: Estructura responsiva basada en flexbox/grid que prioriza un máximo de 4 columnas por fila */
           <div style={{ 
             display: "grid", 
-            gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", 
+            gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", 
             gap: "24px",
             width: "100%" 
           }}>
             {postsRecientes.map((post) => (
               <div 
                 key={post.id}
-                onClick={() => navigate(`/card/${post.cardId}`)} // <-- CORREGIDO: Redirección directa al template oficial
+                onClick={() => navigate(`/card/${post.cardId}`)}
                 style={{ 
                   border: "1px solid #e2e8f0", 
                   borderRadius: "12px", 
