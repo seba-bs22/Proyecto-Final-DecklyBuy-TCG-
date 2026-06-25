@@ -17,7 +17,7 @@ app.add_middleware(
 )
 
 # modelo entranado
-model = YOLO("models/decklybuy_condition_v2.pt")
+model = YOLO("models/decklybuy_condition_v3.pt")
 
 UPLOAD_DIR = "uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
@@ -52,7 +52,7 @@ DISPLAY_NAMES = {
 def home():
     return {
         "message": "API IA DecklyBuy funcionando",
-        "model": "decklybuy_condition_v2",
+        "model": "decklybuy_condition_v3",
         "type": "classification"
     }
 
@@ -98,7 +98,7 @@ async def analyze_card(file: UploadFile = File(...)):
         "score": score,
         "confidence": f"{round(top1_confidence * 100, 1)}%",
         "mensaje": f"La carta fue clasificada como {estado}.",
-        "model": "decklybuy_condition_v2",
+        "model": "decklybuy_condition_v3",
         "predictions": predictions
     }
 
