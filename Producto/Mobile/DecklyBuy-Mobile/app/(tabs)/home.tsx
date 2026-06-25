@@ -9,87 +9,69 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import WishlistButton from "../../components/WishlistButton";
 import { decklyColors } from "../../constants/decklyColors";
 
-type LocalPost = {
-  id: number;
-  nombre: string;
-  edicion: string;
-  numero: string;
-  precio: number;
-  estadoDetectado: string;
-  score: number;
-  cardImage?: string;
+type CardReference = {
+  id: string;
+  name: string;
+  set: string;
+  number: string;
+  image?: string;
 };
 
-const postsBase: LocalPost[] = [
+const cardsBase: CardReference[] = [
   {
-    id: 1,
-    nombre: "Volcarona",
-    edicion: "Juntos de Aventuras",
-    numero: "029/159",
-    precio: 300,
-    estadoDetectado: "Near Mint",
-    score: 9,
+    id: "swsh3-25",
+    name: "Volcarona",
+    set: "Darkness Ablaze",
+    number: "025/189",
+    image: "https://assets.tcgdex.net/en/swsh/swsh3/25/low.png",
   },
   {
-    id: 2,
-    nombre: "Buddy-Buddy Poffin",
-    edicion: "Evoluciones Prismáticas",
-    numero: "101/131",
-    precio: 200,
-    estadoDetectado: "Moderately Played",
-    score: 5,
+    id: "sv05-144",
+    name: "Buddy-Buddy Poffin",
+    set: "Temporal Forces",
+    number: "144/162",
+    image: "https://assets.tcgdex.net/en/sv/sv05/144/low.png",
   },
   {
-    id: 3,
-    nombre: "Charizard EX",
-    edicion: "Scarlet & Violet",
-    numero: "125/197",
-    precio: 15000,
-    estadoDetectado: "Lightly Played",
-    score: 7,
+    id: "sv03-125",
+    name: "Charizard ex",
+    set: "Obsidian Flames",
+    number: "125/197",
+    image: "https://assets.tcgdex.net/en/sv/sv03/125/low.png",
+  },
+  {
+    id: "sv04-123",
+    name: "Pikachu",
+    set: "Paradox Rift",
+    number: "123/182",
+    image: "https://assets.tcgdex.net/en/sv/sv04/123/low.png",
   },
 ];
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
-
   const [isScrolled, setIsScrolled] = useState(false);
 
   const headerHeight = 78 + insets.top;
-
-  const formatCLP = (value?: number) => {
-    if (!value) return "$0 CLP";
-
-    return `$${value.toLocaleString("es-CL")} CLP`;
-  };
 
   const handleScroll = (event: any) => {
     const offsetY = event.nativeEvent.contentOffset.y;
     setIsScrolled(offsetY > 20);
   };
 
-  const getScoreColor = (score?: number) => {
-    if (score === 10) return decklyColors.homeScoreMintBackground;
-    if (score === 9) return decklyColors.homeScoreNearMintBackground;
-    if (score === 7) return decklyColors.homeScoreLightlyPlayedBackground;
-    if (score === 5) return decklyColors.homeScoreModeratelyPlayedBackground;
-    if (score === 3) return decklyColors.homeScoreHeavilyPlayedBackground;
-    if (score === 1) return decklyColors.homeScoreDamagedBackground;
-
-    return decklyColors.homeScoreDamagedBackground;
-  };
-
-  const adaptPostToWishlist = (post: LocalPost) => {
-    return {
-      id: post.id,
-      name: post.nombre,
-      edition: post.edicion,
-      condition: post.estadoDetectado,
-      price: formatCLP(post.precio),
-    };
+  const handleCardPress = (card: CardReference) => {
+    router.push({
+      pathname: "/card-posts",
+      params: {
+        cardId: card.id,
+        name: card.name,
+        set: card.set,
+        number: card.number,
+        image: card.image ?? "",
+      },
+    } as any);
   };
 
   return (
@@ -117,9 +99,7 @@ export default function HomeScreen() {
               },
             ]}
           >
-            <Text style={styles.searchText}>
-              Buscar cartas o publicaciones...
-            </Text>
+            <Text style={styles.searchText}>Buscar cartas...</Text>
           </View>
 
           <Pressable
@@ -147,15 +127,26 @@ export default function HomeScreen() {
         scrollEventThrottle={16}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.sectionTitle}>Recientes</Text>
+        <Text style={styles.sectionTitle}>Cartas disponibles</Text>
 
-        <View style={styles.postsContainer}>
-          {postsBase.map((post) => (
-            <Pressable key={post.id} style={styles.postCard}>
+        <Text style={styles.sectionDescription}>
+          Selecciona una carta para ver las publicaciones asociadas.
+        </Text>
+
+        <View style={styles.cardsGrid}>
+          {cardsBase.map((card) => (
+            <Pressable
+              key={card.id}
+              style={({ pressed }) => [
+                styles.cardReference,
+                pressed && styles.cardPressed,
+              ]}
+              onPress={() => handleCardPress(card)}
+            >
               <View style={styles.imageBox}>
-                {post.cardImage ? (
+                {card.image ? (
                   <Image
-                    source={{ uri: post.cardImage }}
+                    source={{ uri: card.image }}
                     style={styles.cardImage}
                     resizeMode="contain"
                   />
@@ -164,43 +155,20 @@ export default function HomeScreen() {
                 )}
               </View>
 
-              <View style={styles.postInfo}>
-                <View>
-                  <View style={styles.titleRow}>
-                    <Text numberOfLines={1} style={styles.cardTitle}>
-                      {post.nombre}
-                    </Text>
+              <View style={styles.cardInfoBox}>
+                <Text numberOfLines={2} style={styles.cardName}>
+                  {card.name}
+                </Text>
 
-                    <View
-                      style={[
-                        styles.scoreCircle,
-                        {
-                          backgroundColor: getScoreColor(post.score),
-                        },
-                      ]}
-                    >
-                      <Text style={styles.scoreCircleText}>{post.score}</Text>
-                    </View>
-                  </View>
+                <Text numberOfLines={1} style={styles.cardSet}>
+                  Set: {card.set}
+                </Text>
 
-                  <Text numberOfLines={1} style={styles.cardInfo}>
-                    Edición: {post.edicion}
-                  </Text>
+                <Text numberOfLines={1} style={styles.cardNumber}>
+                  N° {card.number}
+                </Text>
 
-                  <Text numberOfLines={1} style={styles.cardInfo}>
-                    #{post.numero}
-                  </Text>
-
-                  <Text numberOfLines={1} style={styles.conditionText}>
-                    {post.estadoDetectado}
-                  </Text>
-                </View>
-
-                <View style={styles.bottomRow}>
-                  <Text style={styles.cardPrice}>{formatCLP(post.precio)}</Text>
-
-                  <WishlistButton post={adaptPostToWishlist(post)} />
-                </View>
+                <Text style={styles.viewPostsText}>Ver publicaciones</Text>
               </View>
             </Pressable>
           ))}
@@ -269,28 +237,40 @@ const styles = StyleSheet.create({
     color: decklyColors.homeSectionTitle,
     fontSize: 24,
     fontWeight: "bold",
-    marginBottom: 16,
+    marginBottom: 6,
   },
-  postsContainer: {
-    gap: 14,
+  sectionDescription: {
+    color: decklyColors.homeCardInfo,
+    fontSize: 14,
+    marginBottom: 18,
   },
-  postCard: {
+  cardsGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    rowGap: 16,
+  },
+  cardReference: {
+    width: "48%",
     backgroundColor: decklyColors.homeCardBackground,
     borderColor: decklyColors.homeCardBorder,
     borderWidth: 1,
     borderRadius: 16,
-    padding: 14,
-    flexDirection: "row",
+    padding: 12,
+    minHeight: 260,
+  },
+  cardPressed: {
+    transform: [{ scale: 0.97 }],
+    opacity: 0.9,
   },
   imageBox: {
-    width: 82,
-    height: 108,
+    height: 150,
     backgroundColor: decklyColors.homeCardImageBackground,
     borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
-    marginRight: 14,
     overflow: "hidden",
+    marginBottom: 12,
   },
   cardImage: {
     width: "100%",
@@ -300,54 +280,29 @@ const styles = StyleSheet.create({
     color: decklyColors.homeCardImageText,
     fontWeight: "bold",
   },
-  postInfo: {
+  cardInfoBox: {
     flex: 1,
-    justifyContent: "space-between",
   },
-  titleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 8,
-  },
-  cardTitle: {
-    flex: 1,
+  cardName: {
     color: decklyColors.homeCardTitle,
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "bold",
+    marginBottom: 6,
   },
-  scoreCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  scoreCircleText: {
-    color: decklyColors.homeScoreText,
-    fontSize: 13,
-    fontWeight: "900",
-  },
-  cardInfo: {
+  cardSet: {
     color: decklyColors.homeCardInfo,
-    marginTop: 4,
     fontSize: 13,
+    marginBottom: 4,
   },
-  conditionText: {
-    color: decklyColors.homeCardTitle,
-    marginTop: 7,
-    fontSize: 15,
-    fontWeight: "800",
+  cardNumber: {
+    color: decklyColors.homeCardInfo,
+    fontSize: 13,
+    marginBottom: 10,
   },
-  bottomRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginTop: 8,
-  },
-  cardPrice: {
+  viewPostsText: {
     color: decklyColors.homeCardPrice,
-    fontSize: 17,
+    fontSize: 13,
     fontWeight: "bold",
+    marginTop: "auto",
   },
 });

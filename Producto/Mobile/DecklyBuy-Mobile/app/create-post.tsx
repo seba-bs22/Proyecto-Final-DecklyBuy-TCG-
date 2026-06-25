@@ -1,347 +1,461 @@
-import * as ImagePicker from "expo-image-picker";
 import { router } from "expo-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
-  Alert,
   Image,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import BackButton from "../components/BackButton";
 import { decklyColors } from "../constants/decklyColors";
 
+type OfficialCard = {
+  id: string;
+  name: string;
+  set: string;
+  number: string;
+  category: string;
+  image: string;
+};
+
+type Expansion = {
+  id: string;
+  name: string;
+  subtitle: string;
+  cards: OfficialCard[];
+};
+
+const expansions: Expansion[] = [
+  {
+    id: "sv03",
+    name: "Obsidian Flames",
+    subtitle: "Scarlet & Violet",
+    cards: [
+      {
+        id: "sv03-125",
+        name: "Charizard ex",
+        set: "Obsidian Flames",
+        number: "125/197",
+        category: "Pokémon ex",
+        image: "https://assets.tcgdex.net/en/sv/sv03/125/low.png",
+      },
+      {
+        id: "sv03-120",
+        name: "Pidgeot ex",
+        set: "Obsidian Flames",
+        number: "120/197",
+        category: "Pokémon ex",
+        image: "https://assets.tcgdex.net/en/sv/sv03/120/low.png",
+      },
+    ],
+  },
+  {
+    id: "sv05",
+    name: "Temporal Forces",
+    subtitle: "Scarlet & Violet",
+    cards: [
+      {
+        id: "sv05-144",
+        name: "Buddy-Buddy Poffin",
+        set: "Temporal Forces",
+        number: "144/162",
+        category: "Entrenador",
+        image: "https://assets.tcgdex.net/en/sv/sv05/144/low.png",
+      },
+      {
+        id: "sv05-123",
+        name: "Iron Leaves ex",
+        set: "Temporal Forces",
+        number: "123/162",
+        category: "Pokémon ex",
+        image: "https://assets.tcgdex.net/en/sv/sv05/123/low.png",
+      },
+    ],
+  },
+  {
+    id: "swsh3",
+    name: "Darkness Ablaze",
+    subtitle: "Sword & Shield",
+    cards: [
+      {
+        id: "swsh3-25",
+        name: "Volcarona",
+        set: "Darkness Ablaze",
+        number: "025/189",
+        category: "Fase 1",
+        image: "https://assets.tcgdex.net/en/swsh/swsh3/25/low.png",
+      },
+    ],
+  },
+];
+
 export default function CreatePostScreen() {
-  const [imageUri, setImageUri] = useState<string | null>(null);
+  const insets = useSafeAreaInsets();
 
-  const [formData, setFormData] = useState({
-    nombre: "",
-    edicion: "",
-    numero: "",
-    precio: "",
-  });
+  const [selectedExpansionId, setSelectedExpansionId] = useState<string | null>(
+    null
+  );
+  const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
 
-  const handleChange = (field: string, value: string) => {
-    setFormData({
-      ...formData,
-      [field]: value,
-    });
+  const selectedExpansion = useMemo(() => {
+    return expansions.find((expansion) => expansion.id === selectedExpansionId);
+  }, [selectedExpansionId]);
+
+  const selectedCard = useMemo(() => {
+    return selectedExpansion?.cards.find((card) => card.id === selectedCardId);
+  }, [selectedExpansion, selectedCardId]);
+
+  const handleSelectExpansion = (expansionId: string) => {
+    setSelectedExpansionId(expansionId);
+    setSelectedCardId(null);
   };
 
-  const pickImageFromGallery = async () => {
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+  const handleContinue = () => {
+    if (!selectedCard) return;
 
-    if (!permission.granted) {
-      Alert.alert(
-        "Permiso requerido",
-        "Debes permitir el acceso a la galería para seleccionar una imagen."
-      );
-      return;
-    }
-
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ["images"],
-      allowsEditing: true,
-      quality: 0.8,
-    });
-
-    if (!result.canceled) {
-      setImageUri(result.assets[0].uri);
-    }
-  };
-
-  const takePhotoWithCamera = async () => {
-    const permission = await ImagePicker.requestCameraPermissionsAsync();
-
-    if (!permission.granted) {
-      Alert.alert(
-        "Permiso requerido",
-        "Debes permitir el acceso a la cámara para tomar una foto."
-      );
-      return;
-    }
-
-    const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ["images"],
-      allowsEditing: true,
-      quality: 0.8,
-    });
-
-    if (!result.canceled) {
-      setImageUri(result.assets[0].uri);
-    }
-  };
-
-  const handleAnalyze = () => {
-    if (!imageUri) {
-      Alert.alert(
-        "Imagen requerida",
-        "Debes seleccionar o tomar una foto antes de analizarla."
-      );
-      return;
-    }
-
-    Alert.alert(
-      "Análisis pendiente",
-      "Más adelante conectaremos esta acción con el servicio de IA."
-    );
-  };
-
-  const handlePublish = () => {
-    Alert.alert(
-      "Publicación pendiente",
-      "Más adelante conectaremos esta acción con el backend."
-    );
+    router.push({
+      pathname: "/create-post-step-two",
+      params: {
+        cardId: selectedCard.id,
+        name: selectedCard.name,
+        set: selectedCard.set,
+        number: selectedCard.number,
+        category: selectedCard.category,
+        image: selectedCard.image,
+      },
+    } as any);
   };
 
   return (
     <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.content}
+      style={styles.screen}
+      contentContainerStyle={[
+        styles.content,
+        {
+          paddingTop: insets.top + 20,
+          paddingBottom: insets.bottom + 80,
+        },
+      ]}
       showsVerticalScrollIndicator={false}
     >
-      <BackButton onPress={() => router.replace("/my-posts" as any)} />
+      <View style={styles.backWrapper}>
+        <BackButton onPress={() => router.back()} />
+      </View>
 
-      <Text style={styles.title}>Crear publicación</Text>
+      <View style={styles.header}>
+        <Text style={styles.title}>Crear publicación</Text>
+        <Text style={styles.subtitle}>
+          Paso 1: selecciona la carta oficial desde el catálogo.
+        </Text>
+      </View>
 
-      <Text style={styles.subtitle}>
-        Completa los datos de la carta y agrega una imagen para previsualizarla.
-      </Text>
+      <View style={styles.block}>
+        <Text style={styles.blockTitle}>Información del catálogo oficial</Text>
+        <Text style={styles.blockDescription}>
+          Elige una expansión y luego selecciona la carta que quieres publicar.
+        </Text>
 
-      <View style={styles.imageBox}>
-        {imageUri ? (
-          <Image source={{ uri: imageUri }} style={styles.previewImage} />
-        ) : (
-          <View style={styles.placeholder}>
-            <Text style={styles.placeholderText}>
-              Sube o toma una imagen de la carta
-            </Text>
-          </View>
-        )}
+        <Text style={styles.label}>Expansión</Text>
 
-        <View style={styles.imageButtonsRow}>
-          <Pressable
-            style={styles.imageButton}
-            onPress={pickImageFromGallery}
-          >
-            <Text style={styles.imageButtonText}>Galería</Text>
-          </Pressable>
-
-          <Pressable
-            style={styles.imageButton}
-            onPress={takePhotoWithCamera}
-          >
-            <Text style={styles.imageButtonText}>Cámara</Text>
-          </Pressable>
+        <View style={styles.optionsList}>
+          {expansions.map((expansion) => (
+            <Pressable
+              key={expansion.id}
+              style={[
+                styles.optionCard,
+                selectedExpansionId === expansion.id && styles.optionCardActive,
+              ]}
+              onPress={() => handleSelectExpansion(expansion.id)}
+            >
+              <Text
+                style={[
+                  styles.optionTitle,
+                  selectedExpansionId === expansion.id &&
+                    styles.optionTitleActive,
+                ]}
+              >
+                {expansion.name}
+              </Text>
+              <Text
+                style={[
+                  styles.optionSubtitle,
+                  selectedExpansionId === expansion.id &&
+                    styles.optionSubtitleActive,
+                ]}
+              >
+                {expansion.subtitle}
+              </Text>
+            </Pressable>
+          ))}
         </View>
 
-        <Pressable style={styles.analyzeButton} onPress={handleAnalyze}>
-          <Text style={styles.analyzeButtonText}>Analizar imagen</Text>
-        </Pressable>
+        {selectedExpansion && (
+          <>
+            <Text style={styles.label}>Carta oficial</Text>
+
+            <View style={styles.cardsList}>
+              {selectedExpansion.cards.map((card) => (
+                <Pressable
+                  key={card.id}
+                  style={[
+                    styles.officialCard,
+                    selectedCardId === card.id && styles.officialCardActive,
+                  ]}
+                  onPress={() => setSelectedCardId(card.id)}
+                >
+                  <View style={styles.cardImageBox}>
+                    <Image
+                      source={{ uri: card.image }}
+                      style={styles.cardImage}
+                      resizeMode="contain"
+                    />
+                  </View>
+
+                  <View style={styles.cardInfo}>
+                    <Text numberOfLines={1} style={styles.cardName}>
+                      {card.name}
+                    </Text>
+                    <Text style={styles.cardDetail}>Set: {card.set}</Text>
+                    <Text style={styles.cardDetail}>N° {card.number}</Text>
+                    <Text style={styles.cardCategory}>{card.category}</Text>
+                  </View>
+                </Pressable>
+              ))}
+            </View>
+          </>
+        )}
       </View>
 
-      <View style={styles.formBox}>
-        <Text style={styles.label}>Nombre de la carta</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Ej: Charizard EX"
-          placeholderTextColor={decklyColors.createPostInputPlaceholder}
-          value={formData.nombre}
-          onChangeText={(value) => handleChange("nombre", value)}
-        />
+      {selectedCard && (
+        <View style={styles.previewBlock}>
+          <Text style={styles.previewTitle}>Carta seleccionada</Text>
 
-        <Text style={styles.label}>Edición</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Ej: Scarlet & Violet 151"
-          placeholderTextColor={decklyColors.createPostInputPlaceholder}
-          value={formData.edicion}
-          onChangeText={(value) => handleChange("edicion", value)}
-        />
+          <View style={styles.previewContent}>
+            <Image
+              source={{ uri: selectedCard.image }}
+              style={styles.previewImage}
+              resizeMode="contain"
+            />
 
-        <Text style={styles.label}>Número</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Ej: 065/165"
-          placeholderTextColor={decklyColors.createPostInputPlaceholder}
-          value={formData.numero}
-          onChangeText={(value) => handleChange("numero", value)}
-        />
+            <View style={styles.previewInfo}>
+              <Text style={styles.previewName}>{selectedCard.name}</Text>
+              <Text style={styles.previewText}>{selectedCard.set}</Text>
+              <Text style={styles.previewText}>N° {selectedCard.number}</Text>
+              <Text style={styles.previewBadge}>{selectedCard.category}</Text>
+            </View>
+          </View>
+        </View>
+      )}
 
-        <Text style={styles.label}>Precio</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Ej: 8000"
-          placeholderTextColor={decklyColors.createPostInputPlaceholder}
-          value={formData.precio}
-          onChangeText={(value) => handleChange("precio", value)}
-          keyboardType="numeric"
-        />
-
-        <View style={styles.separator} />
-
-        <Text style={styles.label}>Estado detectado</Text>
-        <TextInput
-          style={[styles.input, styles.readOnlyInput]}
-          placeholder="Ej: Lightly Played"
-          placeholderTextColor={decklyColors.createPostInputPlaceholder}
-          editable={false}
-        />
-
-        <Text style={styles.label}>Score</Text>
-        <TextInput
-          style={[styles.input, styles.readOnlyInput]}
-          placeholder="Ej: 7/10"
-          placeholderTextColor={decklyColors.createPostInputPlaceholder}
-          editable={false}
-        />
-
-        <Text style={styles.label}>Confianza</Text>
-        <TextInput
-          style={[styles.input, styles.readOnlyInput]}
-          placeholder="Ej: 85%"
-          placeholderTextColor={decklyColors.createPostInputPlaceholder}
-          editable={false}
-        />
-      </View>
-
-      <Pressable style={styles.publishButton} onPress={handlePublish}>
-        <Text style={styles.publishButtonText}>PUBLICAR</Text>
+      <Pressable
+        style={[
+          styles.continueButton,
+          !selectedCard && styles.continueButtonDisabled,
+        ]}
+        disabled={!selectedCard}
+        onPress={handleContinue}
+      >
+        <Text style={styles.continueButtonText}>Continuar</Text>
       </Pressable>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  screen: {
     flex: 1,
-    backgroundColor: decklyColors.createPostBackground,
+    backgroundColor: "#ffffff",
   },
   content: {
-    padding: 20,
-    paddingBottom: 120,
+    paddingHorizontal: 18,
+  },
+  backWrapper: {
+    alignSelf: "flex-start",
+    marginBottom: 20,
+  },
+  header: {
+    marginBottom: 22,
   },
   title: {
-    color: decklyColors.createPostTitle,
-    fontSize: 30,
-    fontWeight: "bold",
-    textAlign: "center",
-    marginTop: 24,
+    color: "#0f172a",
+    fontSize: 28,
+    fontWeight: "900",
   },
   subtitle: {
-    color: decklyColors.createPostSubtitle,
-    fontSize: 15,
-    textAlign: "center",
+    color: "#64748b",
+    fontSize: 14,
     marginTop: 8,
-    marginBottom: 22,
-    lineHeight: 21,
+    lineHeight: 20,
   },
-  imageBox: {
-    backgroundColor: decklyColors.createPostImageBoxBackground,
-    borderColor: decklyColors.createPostImageBoxBorder,
+  block: {
+    backgroundColor: "#f8fafc",
+    borderColor: "#e2e8f0",
     borderWidth: 1,
     borderRadius: 18,
     padding: 16,
     marginBottom: 18,
   },
-  placeholder: {
-    height: 230,
-    borderRadius: 14,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderStyle: "dashed",
-    borderColor: decklyColors.createPostImageBoxBorder,
+  blockTitle: {
+    color: "#0f172a",
+    fontSize: 19,
+    fontWeight: "900",
+    marginBottom: 6,
   },
-  placeholderText: {
-    color: decklyColors.createPostImagePlaceholderText,
-    fontWeight: "600",
-    textAlign: "center",
-  },
-  previewImage: {
-    width: "100%",
-    height: 280,
-    borderRadius: 14,
-    resizeMode: "contain",
-    backgroundColor: "#000000",
-  },
-  imageButtonsRow: {
-    flexDirection: "row",
-    marginTop: 14,
-    gap: 12,
-  },
-  imageButton: {
-    flex: 1,
-    backgroundColor: decklyColors.createPostImageButtonBackground,
-    borderColor: decklyColors.createPostImageButtonBorder,
-    borderWidth: 1,
-    borderRadius: 12,
-    paddingVertical: 13,
-    alignItems: "center",
-  },
-  imageButtonText: {
-    color: decklyColors.createPostImageButtonText,
-    fontWeight: "bold",
-  },
-  analyzeButton: {
-    backgroundColor: decklyColors.createPostAnalyzeButtonBackground,
-    borderColor: decklyColors.createPostAnalyzeButtonBorder,
-    borderWidth: 1,
-    borderRadius: 12,
-    paddingVertical: 13,
-    alignItems: "center",
-    marginTop: 12,
-  },
-  analyzeButtonText: {
-    color: decklyColors.createPostAnalyzeButtonText,
-    fontWeight: "bold",
-  },
-  formBox: {
-    backgroundColor: decklyColors.createPostFormBackground,
-    borderColor: decklyColors.createPostFormBorder,
-    borderWidth: 1,
-    borderRadius: 18,
-    padding: 18,
+  blockDescription: {
+    color: "#64748b",
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: 18,
   },
   label: {
-    color: decklyColors.createPostLabel,
-    fontWeight: "700",
-    marginBottom: 7,
+    color: "#475569",
+    fontSize: 13,
+    fontWeight: "900",
+    marginBottom: 10,
+    marginTop: 8,
   },
-  input: {
-    backgroundColor: decklyColors.createPostInputBackground,
-    borderColor: decklyColors.createPostInputBorder,
+  optionsList: {
+    gap: 10,
+    marginBottom: 12,
+  },
+  optionCard: {
+    backgroundColor: "#ffffff",
+    borderColor: "#cbd5e1",
     borderWidth: 1,
     borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 13,
-    color: decklyColors.createPostInputText,
-    marginBottom: 14,
+    padding: 14,
   },
-  readOnlyInput: {
-    backgroundColor: decklyColors.createPostReadOnlyBackground,
-    color: decklyColors.createPostReadOnlyText,
+  optionCardActive: {
+    backgroundColor: "#dbeafe",
+    borderColor: "#2563eb",
   },
-  separator: {
-    height: 1,
-    backgroundColor: decklyColors.createPostSeparator,
-    marginVertical: 10,
+  optionTitle: {
+    color: "#0f172a",
+    fontSize: 15,
+    fontWeight: "900",
   },
-  publishButton: {
-    backgroundColor: decklyColors.createPostPublishButtonBackground,
-    borderColor: decklyColors.createPostPublishButtonBorder,
+  optionTitleActive: {
+    color: "#1e40af",
+  },
+  optionSubtitle: {
+    color: "#64748b",
+    fontSize: 13,
+    marginTop: 4,
+    fontWeight: "600",
+  },
+  optionSubtitleActive: {
+    color: "#1e40af",
+  },
+  cardsList: {
+    gap: 12,
+  },
+  officialCard: {
+    backgroundColor: "#ffffff",
+    borderColor: "#cbd5e1",
     borderWidth: 1,
     borderRadius: 14,
+    padding: 12,
+    flexDirection: "row",
+  },
+  officialCardActive: {
+    borderColor: "#2563eb",
+    backgroundColor: "#eff6ff",
+  },
+  cardImageBox: {
+    width: 76,
+    height: 104,
+    backgroundColor: "#f1f5f9",
+    borderRadius: 10,
+    overflow: "hidden",
+    marginRight: 12,
+  },
+  cardImage: {
+    width: "100%",
+    height: "100%",
+  },
+  cardInfo: {
+    flex: 1,
+    justifyContent: "center",
+  },
+  cardName: {
+    color: "#0f172a",
+    fontSize: 16,
+    fontWeight: "900",
+    marginBottom: 5,
+  },
+  cardDetail: {
+    color: "#64748b",
+    fontSize: 13,
+    fontWeight: "600",
+    marginBottom: 3,
+  },
+  cardCategory: {
+    color: "#1e40af",
+    fontSize: 13,
+    fontWeight: "900",
+    marginTop: 4,
+  },
+  previewBlock: {
+    backgroundColor: "#ffffff",
+    borderColor: "#e2e8f0",
+    borderWidth: 1,
+    borderRadius: 18,
+    padding: 16,
+    marginBottom: 18,
+  },
+  previewTitle: {
+    color: "#0f172a",
+    fontSize: 18,
+    fontWeight: "900",
+    marginBottom: 14,
+  },
+  previewContent: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  previewImage: {
+    width: 100,
+    height: 138,
+    marginRight: 16,
+  },
+  previewInfo: {
+    flex: 1,
+  },
+  previewName: {
+    color: "#0f172a",
+    fontSize: 18,
+    fontWeight: "900",
+    marginBottom: 6,
+  },
+  previewText: {
+    color: "#64748b",
+    fontSize: 14,
+    fontWeight: "600",
+    marginBottom: 4,
+  },
+  previewBadge: {
+    color: "#1e40af",
+    fontSize: 14,
+    fontWeight: "900",
+    marginTop: 6,
+  },
+  continueButton: {
+    backgroundColor: decklyColors.primary,
+    borderColor: decklyColors.primaryDark,
+    borderWidth: 1,
+    borderRadius: 12,
     paddingVertical: 15,
     alignItems: "center",
-    marginTop: 20,
   },
-  publishButtonText: {
-    color: decklyColors.createPostPublishButtonText,
+  continueButtonDisabled: {
+    opacity: 0.45,
+  },
+  continueButtonText: {
+    color: "#111827",
     fontSize: 16,
-    fontWeight: "bold",
+    fontWeight: "900",
   },
 });

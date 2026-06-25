@@ -79,7 +79,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="categories"
         options={{
-          title: "Categorías",
+          title: "Catálogo",
           tabBarIcon: ({ color }) => (
             <Image
               source={require("../../assets/images/icons/categories.png")}
