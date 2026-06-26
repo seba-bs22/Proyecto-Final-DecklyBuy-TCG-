@@ -3,22 +3,20 @@ package com.DecklyBuy.Backend.cart;
 import com.DecklyBuy.Backend.posts.Post;
 import com.DecklyBuy.Backend.posts.PostRepository;
 import com.DecklyBuy.Backend.users.User;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class CartService {
 
-    @Autowired
-    private CartRepository cartRepository;
+    private final CartRepository cartRepository;
+    private final PostRepository postRepository;
 
-    @Autowired
-    private PostRepository postRepository;
+    public CartService(CartRepository cartRepository, PostRepository postRepository) {
+        this.cartRepository = cartRepository;
+        this.postRepository = postRepository;
+    }
 
-    /**
-     * Obtiene el carrito del usuario. Si no existe, crea uno nuevo.
-     */
     @Transactional
     public Cart obtenerOCrearCarrito(User usuario) {
         Cart cart = cartRepository.findByUsuario(usuario)
@@ -26,16 +24,12 @@ public class CartService {
                     Cart nuevoCarrito = new Cart(usuario);
                     return cartRepository.save(nuevoCarrito);
                 });
-        // Forzamos la inicialización de la lista perezosa mientras la transacción está abierta
         if (cart.getItems() != null) {
             cart.getItems().size();
         }
         return cart;
     }
 
-    /**
-     * Añade una carta (Post) al carrito del usuario.
-     */
     @Transactional
     public void agregarPostAlCarrito(User usuario, Long postId) {
         if (postId == null) {
@@ -60,17 +54,11 @@ public class CartService {
         cartRepository.save(cart);
     }
 
-    /**
-     * Obtiene el carrito completo usando una transacción de escritura/lectura normal
-     */
     @Transactional
     public Cart obtenerCarrito(User usuario) {
         return obtenerOCrearCarrito(usuario);
     }
 
-    /**
-     * Elimina una carta específica del carrito utilizando el ID del CartItem.
-     */
     @Transactional
     public void eliminarItemDelCarrito(User usuario, Long cartItemId) {
         if (cartItemId == null) {

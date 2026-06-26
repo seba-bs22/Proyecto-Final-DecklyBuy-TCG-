@@ -4,43 +4,31 @@ import { useNavigate } from "react-router-dom";
 const CreatePost = () => {
   const navigate = useNavigate();
 
-  // Estados de carga de archivos y vista previa
   const [imagePreview, setImagePreview] = useState(null);
   const [selectedImage, setSelectedImage] = useState(null);
-
-  // Estados para almacenar la información directa de la API de TCGDex
   const [apiSets, setApiSets] = useState([]);
   const [apiCards, setApiCards] = useState([]);
   const [selectedSetId, setSelectedSetId] = useState("");
   const [currentSetDetails, setCurrentSetDetails] = useState(null);
-
-  // Estado para la vista previa de la imagen oficial de la API
   const [apiImagePreview, setApiImagePreview] = useState(null);
+  const [analysisResult, setAnalysisResult] = useState(null);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [modal, setModal] = useState(null);
+  const [cardDataForBackend, setCardDataForBackend] = useState(null);
 
-  // Estados del formulario de la carta (AGREGADO: idioma inicializado vacío)
   const [formData, setFormData] = useState({
     precio: "",
     categoriaCarta: "", 
     descripcion: "",
-    idioma: "" // <-- Agregado con éxito
+    idioma: "" 
   });
 
-  // Estados espejo solo para pintar la interfaz visualmente
   const [uiFields, setUiFields] = useState({
     nombre: "",
     edicion: "",
     numero: ""
   });
 
-  // Estado para empaquetar el objeto relacional 'card' que espera el Backend
-  const [cardDataForBackend, setCardDataForBackend] = useState(null);
-
-  // Estados del servicio de inteligencia artificial y modales
-  const [analysisResult, setAnalysisResult] = useState(null);
-  const [analyzing, setAnalyzing] = useState(false);
-  const [modal, setModal] = useState(null);
-
-  // Cargar expansiones (Sets) al abrir la página por primera vez
   useEffect(() => {
     fetch("https://api.tcgdex.net/v2/es/sets")
       .then((res) => res.json())
@@ -48,7 +36,6 @@ const CreatePost = () => {
       .catch((err) => console.error("Error al obtener sets de la API:", err));
   }, []);
 
-  // Cargar cartas automáticamente cuando el usuario seleccione un set
   useEffect(() => {
     if (!selectedSetId) {
       setApiCards([]);
@@ -59,9 +46,7 @@ const CreatePost = () => {
     
     fetch(`https://api.tcgdex.net/v2/en/sets/${selectedSetId}`)
       .then((res) => {
-        if (!res.ok) {
-          throw new Error(`Error en respuesta: ${res.status}`);
-        }
+        if (!res.ok) throw new Error(`Error en respuesta: ${res.status}`);
         return res.json();
       })
       .then((data) => {
@@ -80,7 +65,6 @@ const CreatePost = () => {
       });
   }, [selectedSetId]);
 
-  // Manejo de seleccion de archivos
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -89,16 +73,11 @@ const CreatePost = () => {
     setAnalysisResult(null);
   };
 
-  // Manejo de cambios en los inputs del formulario
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value
-    });
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Manejar la selección final de la carta específica en el dropdown
   const handleCardSelection = (cardId) => {
     if (!cardId) {
       setCardDataForBackend(null);
@@ -114,16 +93,14 @@ const CreatePost = () => {
       const numeroBase = cardBrief.localId || cardBrief.id.split("-").pop();
       const totalCartas = currentSetDetails?.cardCount?.official || currentSetDetails?.cardCount || "";
       const numeroCombinado = totalCartas ? `${numeroBase}/${totalCartas}` : numeroBase;
-      
       const oficialImgUrl = cardBrief.image ? `${cardBrief.image}/high.png` : null;
+      
       setApiImagePreview(oficialImgUrl);
-
       setUiFields({
         nombre: cardBrief.name,
         edicion: currentSetBrief ? currentSetBrief.name : "",
         numero: numeroCombinado
       });
-
       setCardDataForBackend({
         id: cardBrief.id,
         name: cardBrief.name,
@@ -134,7 +111,6 @@ const CreatePost = () => {
     }
   };
 
-  // Peticion al servicio de analisis de IA
   const handleAnalyze = async () => {
     if (!selectedImage) {
       setModal({ valid: false, mensaje: "Debes subir una imagen antes de analizarla." });
@@ -169,24 +145,19 @@ const CreatePost = () => {
     }
   };
 
-  // Proceso de subida de imagen e impacto en base de datos
   const handlePublish = async () => {
     if (!selectedImage) {
       setModal({ valid: false, mensaje: "Debes subir una imagen antes de publicar." });
       return;
     }
-    
-    // MODIFICADO: Añadida la validación obligatoria de formData.idioma
     if (!formData.precio || !formData.categoriaCarta || !formData.descripcion || !formData.idioma) {
       setModal({ valid: false, mensaje: "Todos los campos de la publicación, incluyendo el idioma, son obligatorios." });
       return;
     }
-    
     if (!analysisResult) {
       setModal({ valid: false, mensaje: "Debes analizar la imagen antes de publicar." });
       return;
     }
-
     if (!cardDataForBackend) {
       setModal({ valid: false, mensaje: "Debes seleccionar una carta válida de la lista oficial." });
       return;
@@ -211,13 +182,11 @@ const CreatePost = () => {
       const uploadJson = await uploadResponse.json();
       const imageUrl = uploadJson.url; 
 
-      // ─── OBJETO SINCRONIZADO CON LOS TIPOS DE DATOS EXACTOS DE JAVA ───
-      // MODIFICADO: Se inyecta la propiedad 'idioma' para que viaje al backend
       const postData = {
         precio: parseFloat(formData.precio), 
         categoriaCarta: formData.categoriaCarta,
         descripcion: formData.descripcion,
-        idioma: formData.idioma, // <-- Enviado de forma nativa
+        idioma: formData.idioma, 
         estadoDetectado: analysisResult.estado ? String(analysisResult.estado) : null,
         score: analysisResult.score ? parseInt(analysisResult.score, 10) : null, 
         confidence: analysisResult.confidence ? parseFloat(analysisResult.confidence) : null, 
@@ -240,9 +209,7 @@ const CreatePost = () => {
 
       if (response.ok) {
         setModal({ valid: true, mensaje: "Publicacion creada con exito." });
-        setTimeout(() => {
-          navigate("/posts");
-        }, 1500);
+        setTimeout(() => navigate("/posts"), 1500);
       } else {
         const textData = await response.text();
         let errorMessage = "Error al crear la publicacion.";
@@ -261,29 +228,25 @@ const CreatePost = () => {
   };
 
   return (
-    <main className="crear-publicacion-page" style={{ maxWidth: "1200px", margin: "0 auto", padding: "20px" }}>
-      <h1 className="crear-publicacion-titulo" style={{ textAlign: "center", marginBottom: "30px" }}>CREAR PUBLICACIÓN</h1>
+    <main style={estilos.main}>
+      <h1 style={estilos.mainTitle}>CREAR PUBLICACIÓN</h1>
 
-      {/* ─── BLOQUE 1: INFORMACIÓN OFICIAL DE LA API (FILA SUPERIOR) ─── */}
-      <fieldset style={{ border: "2px solid #e0115f", borderRadius: "8px", padding: "20px", marginBottom: "30px", background: "#fff" }}>
-        <legend style={{ fontWeight: "bold", color: "#e0115f", padding: "0 10px", fontSize: "1.2rem" }}>1. Información del Catálogo Oficial</legend>
-        
-        <div style={{ display: "flex", gap: "30px", flexWrap: "wrap" }}>
-          {/* Lado Izquierdo: Imagen de la API */}
-          <div style={{ flex: "1", minWidth: "250px", display: "flex", justifyContent: "center", alignItems: "center", background: "#f5f5f5", borderRadius: "8px", padding: "10px", minHeight: "300px" }}>
+      <fieldset style={estilos.fieldsetCatalog}>
+        <legend style={estilos.legendCatalog}>1. Información del Catálogo Oficial</legend>
+        <div style={estilos.flexRow}>
+          <div style={estilos.imgBoxCatalog}>
             {apiImagePreview ? (
-              <img src={apiImagePreview} alt="Carta Oficial" style={{ maxHeight: "300px", objectFit: "contain", borderRadius: "8px" }} />
+              <img src={apiImagePreview} alt="Carta Oficial" style={estilos.imgCatalog} />
             ) : (
-              <div style={{ textAlign: "center", color: "#888" }}>
-                <p style={{ fontSize: "1.5rem", marginBottom: "5px" }}>🎴</p>
+              <div style={estilos.placeholderBox}>
+                <p style={estilos.placeholderIcon}>🎴</p>
                 <p>Selecciona una carta para ver la ilustración oficial</p>
               </div>
             )}
           </div>
 
-          {/* Lado Derecho: Desplegables y campos espejo de la API */}
-          <div className="form-publicacion" style={{ flex: "2", minWidth: "300px" }}>
-            <label style={{ fontWeight: "bold", color: "#e0115f" }}>Buscar Expansión Oficial</label>
+          <div className="form-publicacion" style={estilos.flexFields}>
+            <label style={estilos.labelCatalog}>Buscar Expansión Oficial</label>
             <select
               value={selectedSetId}
               onChange={(e) => {
@@ -292,7 +255,7 @@ const CreatePost = () => {
                 setUiFields({ nombre: "", edicion: "", numero: "" });
               }}
               className="select-categoria-carta"
-              style={{ width: "100%", padding: "10px", marginBottom: "15px", background: "#f9f9f9" }}
+              style={estilos.select}
             >
               <option value="">-- Elige una expansión --</option>
               {apiSets.map((set) => (
@@ -300,12 +263,12 @@ const CreatePost = () => {
               ))}
             </select>
 
-            <label style={{ fontWeight: "bold", color: "#e0115f" }}>Seleccionar Carta Oficial</label>
+            <label style={estilos.labelCatalog}>Seleccionar Carta Oficial</label>
             <select
               disabled={!selectedSetId}
               onChange={(e) => handleCardSelection(e.target.value)}
               className="select-categoria-carta"
-              style={{ width: "100%", padding: "10px", marginBottom: "15px", background: "#f9f9f9" }}
+              style={estilos.select}
             >
               <option value="">-- Elige la carta --</option>
               {apiCards.map((carta) => {
@@ -318,60 +281,59 @@ const CreatePost = () => {
               })}
             </select>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "15px", marginTop: "15px" }}>
+            <div style={estilos.gridHalf}>
               <div>
                 <label>Nombre de la carta</label>
-                <input type="text" value={uiFields.nombre} disabled style={{ width: "100%", padding: "8px", background: "#f0f0f0", color: "#666", border: "1px solid #ccc", borderRadius: "4px" }} />
+                <input type="text" value={uiFields.nombre} disabled style={estilos.disabledInput} />
               </div>
               <div>
                 <label>Edición</label>
-                <input type="text" value={uiFields.edicion} disabled style={{ width: "100%", padding: "8px", background: "#f0f0f0", color: "#666", border: "1px solid #ccc", borderRadius: "4px" }} />
+                <input type="text" value={uiFields.edicion} disabled style={estilos.disabledInput} />
               </div>
             </div>
-            <div style={{ marginTop: "15px" }}>
+            <div style={estilos.mt15}>
               <label>Número de Colección</label>
-              <input type="text" value={uiFields.numero} disabled style={{ width: "100%", padding: "8px", background: "#f0f0f0", color: "#666", border: "1px solid #ccc", borderRadius: "4px" }} />
+              <input type="text" value={uiFields.numero} disabled style={estilos.disabledInput} />
             </div>
           </div>
         </div>
       </fieldset>
 
-      {/* ─── BLOQUE 2: DATOS DEL VENDEDOR E IA YOLO (FILA INFERIOR) ─── */}
-      <fieldset style={{ border: "2px solid #2575fc", borderRadius: "8px", padding: "20px", marginBottom: "30px", background: "#fff" }}>
-        <legend style={{ fontWeight: "bold", color: "#2575fc", padding: "0 10px", fontSize: "1.2rem" }}>2. Tu Publicación y Análisis de Calidad</legend>
-        
-        <div style={{ display: "flex", gap: "30px", flexWrap: "wrap" }}>
-          {/* Lado Izquierdo: Tu Foto y Botón de Escaneo */}
-          <div className="imagen-publicacion-box" style={{ flex: "1", minWidth: "250px", display: "flex", flexDirection: "column", gap: "15px" }}>
-            <div style={{ background: "#f5f5f5", borderRadius: "8px", padding: "10px", minHeight: "300px", display: "flex", justifyContent: "center", alignItems: "center" }}>
+      <fieldset style={estilos.fieldsetSeller}>
+        <legend style={estilos.legendSeller}>2. Tu Publicación y Análisis de Calidad</legend>
+        <div style={estilos.flexRow}>
+          <div className="imagen-publicacion-box" style={estilos.flexImageSeller}>
+            <div style={estilos.imgBoxSeller}>
               {imagePreview ? (
-                <img src={imagePreview} alt="Tu Foto Real" style={{ maxHeight: "300px", objectFit: "contain", borderRadius: "8px" }} />
+                <img src={imagePreview} alt="Tu Foto Real" style={estilos.imgCatalog} />
               ) : (
-                <div className="imagen-placeholder" style={{ textAlign: "center", color: "#888" }}>
-                  <p style={{ fontSize: "1.5rem" }}>📸</p>
+                <div style={estilos.placeholderBox}>
+                  <p style={estilos.placeholderIcon}>📸</p>
                   <p>Sube una imagen real de tu carta</p>
                 </div>
               )}
             </div>
             
-            <label className="btn-subir-imagen" style={{ display: "block", textAlign: "center", padding: "10px", background: "#2575fc", color: "#fff", borderRadius: "4px", cursor: "pointer", fontWeight: "bold" }}>
+            <label style={estilos.btnUploadImage}>
               Seleccionar foto real
               <input type="file" accept="image/*" onChange={handleImageChange} hidden required />
             </label>
             
-            <button className="btn-analizar-imagen" onClick={handleAnalyze} disabled={analyzing} style={{ width: "100%", padding: "10px", background: analyzing ? "#ccc" : "#e0115f", color: "#fff", border: "none", borderRadius: "4px", fontWeight: "bold", cursor: "pointer" }}>
+            <button 
+              className="btn-analizar-imagen" 
+              onClick={handleAnalyze} 
+              disabled={analyzing} 
+              style={{ ...estilos.btnAnalyze, background: analyzing ? "#ccc" : "#e0115f" }}
+            >
               {analyzing ? "Analizando bordes..." : "🔍 Analizar con IA"}
             </button>
           </div>
 
-          {/* Lado Derecho: Campos editables del Post + Outputs de la IA */}
-          <div className="form-publicacion" style={{ flex: "2", minWidth: "300px" }}>
-            
-            {/* MODIFICADO: Ahora el layout usa un grid de 3 columnas para incluir el Idioma fluidamente */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "15px" }}>
+          <div className="form-publicacion" style={estilos.flexFields}>
+            <div style={estilos.gridThird}>
               <div>
                 <label>Precio de Venta ($)</label>
-                <input type="number" name="precio" value={formData.precio} onChange={handleChange} required style={{ width: "100%", padding: "8px", border: "1px solid #ccc", borderRadius: "4px" }} />
+                <input type="number" name="precio" value={formData.precio} onChange={handleChange} required style={estilos.textInput} />
               </div>
               
               <div>
@@ -383,7 +345,7 @@ const CreatePost = () => {
                   onChange={handleChange} 
                   required
                   className="select-categoria-carta"
-                  style={{ width: "100%", padding: "9px", borderRadius: "4px", border: "1px solid #ccc", background: "white", color: "#333" }}
+                  style={estilos.selectSeller}
                 >
                   <option value="">-- Elige opción --</option>
                   <optgroup label="Pokémon (Línea Estándar)">
@@ -403,7 +365,6 @@ const CreatePost = () => {
                 </select>
               </div>
 
-              {/* AGREGADO: Desplegable Oficial con los Idiomas válidos del ecosistema Pokémon TCG */}
               <div>
                 <label htmlFor="idioma">Idioma Oficial</label>
                 <select 
@@ -412,7 +373,7 @@ const CreatePost = () => {
                   value={formData.idioma} 
                   onChange={handleChange} 
                   required
-                  style={{ width: "100%", padding: "9px", borderRadius: "4px", border: "1px solid #ccc", background: "white", color: "#333", fontSize: "14px" }}
+                  style={estilos.selectSeller}
                 >
                   <option value="">-- Selecciona --</option>
                   <option value="Español">Español 🇪🇸</option>
@@ -426,26 +387,25 @@ const CreatePost = () => {
               </div>
             </div>
 
-            <div style={{ marginTop: "15px" }}>
+            <div style={estilos.mt15}>
               <label>Descripción del Estado de la Carta</label>
-              <textarea name="descripcion" value={formData.descripcion} onChange={handleChange} required style={{ width: "100%", padding: "8px", border: "1px solid #ccc", borderRadius: "4px", minHeight: "80px" }} />
+              <textarea name="descripcion" value={formData.descripcion} onChange={handleChange} required style={estilos.textarea} />
             </div>
 
-            {/* Sub-panel interno con los datos devueltos por YOLO */}
-            <div style={{ marginTop: "20px", padding: "15px", background: "#f4f7fe", borderRadius: "6px", border: "1px dashed #2575fc" }}>
-              <h4 style={{ margin: "0 0 10px 0", color: "#2575fc" }}>Resultados del Escaneo YOLO</h4>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "10px" }}>
+            <div style={estilos.yoloPanel}>
+              <h4 style={estilos.yoloTitle}>Resultados del Escaneo YOLO</h4>
+              <div style={estilos.gridThird}>
                 <div>
-                  <label style={{ fontSize: "0.85rem", color: "#555" }}>Estado Detectado</label>
-                  <input type="text" value={analysisResult?.estado || "Esperando..."} disabled style={{ width: "100%", padding: "6px", textAlign: "center", fontWeight: "bold" }} />
+                  <label style={estilos.yoloLabel}>Estado Detectado</label>
+                  <input type="text" value={analysisResult?.estado || "Esperando..."} disabled style={estilos.yoloInput} />
                 </div>
                 <div>
-                  <label style={{ fontSize: "0.85rem", color: "#555" }}>Puntuación</label>
-                  <input type="text" value={analysisResult ? `${analysisResult.score}/10` : "Esperando..."} disabled style={{ width: "100%", padding: "6px", textAlign: "center", fontWeight: "bold" }} />
+                  <label style={estilos.yoloLabel}>Puntuación</label>
+                  <input type="text" value={analysisResult ? `${analysisResult.score}/10` : "Esperando..."} disabled style={estilos.yoloInput} />
                 </div>
                 <div>
-                  <label style={{ fontSize: "0.85rem", color: "#555" }}>Confianza IA</label>
-                  <input type="text" value={analysisResult?.confidence || "Esperando..."} disabled style={{ width: "100%", padding: "6px", textAlign: "center", fontWeight: "bold" }} />
+                  <label style={estilos.yoloLabel}>Confianza IA</label>
+                  <input type="text" value={analysisResult?.confidence || "Esperando..."} disabled style={estilos.yoloInput} />
                 </div>
               </div>
             </div>
@@ -453,14 +413,12 @@ const CreatePost = () => {
         </div>
       </fieldset>
 
-      {/* Botón Principal de Envío */}
-      <div className="publicar-contenedor" style={{ display: "flex", justifyContent: "center", marginTop: "20px" }}>
-        <button className="btn-publicar" onClick={handlePublish} style={{ padding: "15px 60px", fontSize: "1.2rem", fontWeight: "bold", borderRadius: "30px", cursor: "pointer" }}>
+      <div className="publicar-contenedor" style={estilos.submitContainer}>
+        <button className="btn-publicar" onClick={handlePublish} style={estilos.btnPublish}>
           PUBLICAR EN EL MARKETPLACE
         </button>
       </div>
 
-      {/* Modal de Respuestas de Alerta */}
       {modal && (
         <div className="modal-analisis">
           <div className="modal-contenido">
@@ -474,6 +432,40 @@ const CreatePost = () => {
       )}
     </main>
   );
+};
+
+const estilos = {
+  main: { maxWidth: "1200px", margin: "0 auto", padding: "20px", fontFamily: "sans-serif" },
+  mainTitle: { textAlign: "center", marginBottom: "30px", color: "#0f172a" },
+  fieldsetCatalog: { border: "2px solid #e0115f", borderRadius: "8px", padding: "20px", marginBottom: "30px", background: "#fff" },
+  legendCatalog: { fontWeight: "bold", color: "#e0115f", padding: "0 10px", fontSize: "1.2rem" },
+  flexRow: { display: "flex", gap: "30px", flexWrap: "wrap" },
+  imgBoxCatalog: { flex: "1", minWidth: "250px", display: "flex", justifyContent: "center", alignItems: "center", background: "#f5f5f5", borderRadius: "8px", padding: "10px", minHeight: "300px" },
+  imgCatalog: { maxHeight: "300px", objectFit: "contain", borderRadius: "8px" },
+  placeholderBox: { textAlign: "center", color: "#888" },
+  placeholderIcon: { fontSize: "1.5rem", marginBottom: "5px" },
+  flexFields: { flex: "2", minWidth: "300px" },
+  labelCatalog: { fontWeight: "bold", color: "#e0115f" },
+  select: { width: "100%", padding: "10px", marginBottom: "15px", background: "#f9f9f9", border: "1px solid #ccc", borderRadius: "4px" },
+  gridHalf: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: "15px", marginTop: "15px" },
+  disabledInput: { width: "100%", padding: "8px", background: "#f0f0f0", color: "#666", border: "1px solid #ccc", borderRadius: "4px", boxSizing: "border-box" },
+  mt15: { marginTop: "15px" },
+  fieldsetSeller: { border: "2px solid #2575fc", borderRadius: "8px", padding: "20px", marginBottom: "30px", background: "#fff" },
+  legendSeller: { fontWeight: "bold", color: "#2575fc", padding: "0 10px", fontSize: "1.2rem" },
+  flexImageSeller: { flex: "1", minWidth: "250px", display: "flex", flexDirection: "column", gap: "15px" },
+  imgBoxSeller: { background: "#f5f5f5", borderRadius: "8px", padding: "10px", minHeight: "300px", display: "flex", justifyContent: "center", alignItems: "center" },
+  btnUploadImage: { display: "block", textAlign: "center", padding: "10px", background: "#2575fc", color: "#fff", borderRadius: "4px", cursor: "pointer", fontWeight: "bold" },
+  btnAnalyze: { width: "100%", padding: "10px", color: "#fff", border: "none", borderRadius: "4px", fontWeight: "bold", cursor: "pointer" },
+  gridThird: { display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "15px" },
+  textInput: { width: "100%", padding: "8px", border: "1px solid #ccc", borderRadius: "4px", boxSizing: "border-box" },
+  selectSeller: { width: "100%", padding: "9px", borderRadius: "4px", border: "1px solid #ccc", background: "white", color: "#333", fontSize: "14px", boxSizing: "border-box" },
+  textarea: { width: "100%", padding: "8px", border: "1px solid #ccc", borderRadius: "4px", minHeight: "80px", boxSizing: "border-box", resize: "none" },
+  yoloPanel: { marginTop: "20px", padding: "15px", background: "#f4f7fe", borderRadius: "6px", border: "1px dashed #2575fc" },
+  yoloTitle: { margin: "0 0 10px 0", color: "#2575fc" },
+  yoloLabel: { fontSize: "0.85rem", color: "#555" },
+  yoloInput: { width: "100%", padding: "6px", textAlign: "center", fontWeight: "bold", border: "1px solid #ccc", borderRadius: "4px", background: "#fff", boxSizing: "border-box" },
+  submitContainer: { display: "flex", justifyContent: "center", marginTop: "20px" },
+  btnPublish: { padding: "15px 60px", fontSize: "1.2rem", fontWeight: "bold", borderRadius: "30px", cursor: "pointer", background: "#2e7d32", color: "#fff", border: "none" }
 };
 
 export default CreatePost;

@@ -63,7 +63,6 @@ public class User {
     @Column(name = "reset_token_expiry")
     private OffsetDateTime resetTokenExpiry;
 
-    // Relación con Post
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Post> posts = new ArrayList<>();
 
@@ -75,7 +74,6 @@ public class User {
         this.perfilCompleto = false;
     }
 
-    // --- Getters y Setters ---
     public UUID getId() { return id; }
     public String getGoogleId() { return googleId; }
     public void setGoogleId(String googleId) { this.googleId = googleId; }

@@ -29,17 +29,16 @@ const ResetPassword = () => {
         body: JSON.stringify({ token, newPassword })
       });
 
-      const data = await response.json();
+      const data = await response.json().catch(() => null);
 
       if (!response.ok) {
-        setError(data.message || "Error al restablecer la contraseña");
+        setError(data?.message || "Error al restablecer la contraseña");
         return;
       }
 
-      setMessage("Contraseña restablecida correctamente. Ahora puedes iniciar sesión.");
       setError("");
+      setMessage("Contraseña restablecida correctamente. Ahora puedes iniciar sesión.");
       setTimeout(() => navigate("/login"), 3000);
-
     } catch (err) {
       setError("No se pudo conectar con el servidor");
     }

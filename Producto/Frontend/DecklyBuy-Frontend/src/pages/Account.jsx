@@ -48,7 +48,6 @@ const Account = () => {
 
         setFotoPerfil(user.fotoPerfil || "/user.png");
 
-        // Si el usuario tiene googleId, marcamos que es cuenta Google
         if (user.googleId) {
           setIsGoogleAccount(true);
         }
@@ -65,11 +64,10 @@ const Account = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-
-    setFormData({
-      ...formData,
+    setFormData(prev => ({
+      ...prev,
       [name]: value
-    });
+    }));
   };
 
   const handleSave = async () => {
@@ -78,7 +76,6 @@ const Account = () => {
       return;
     }
 
-    // Solo validamos contraseña si no es cuenta Google
     if (!isGoogleAccount && (formData.password || formData.confirmPassword)) {
       if (formData.password !== formData.confirmPassword) {
         alert("Las contraseñas no coinciden");
@@ -103,7 +100,6 @@ const Account = () => {
           apellido: formData.apellido,
           nombreUsuario: formData.nombreUsuario,
           numeroContacto: formData.numeroContacto,
-          // Solo enviamos contraseña si no es cuenta Google
           password: isGoogleAccount ? null : formData.password,
           confirmPassword: isGoogleAccount ? null : formData.confirmPassword
         })
@@ -117,14 +113,13 @@ const Account = () => {
       }
 
       localStorage.setItem("user", JSON.stringify(data.user));
-
       alert(data.message || "Perfil actualizado correctamente");
 
-      setFormData({
-        ...formData,
+      setFormData(prev => ({
+        ...prev,
         password: "",
         confirmPassword: ""
-      });
+      }));
     } catch (error) {
       console.error("Error guardando perfil:", error);
       alert("No se pudo conectar con el servidor");
@@ -192,7 +187,6 @@ const Account = () => {
           className="input-readonly"
         />
 
-        {/* Solo mostramos campos de contraseña si NO es cuenta Google */}
         {!isGoogleAccount && (
           <>
             <h4>Nueva contraseña</h4>

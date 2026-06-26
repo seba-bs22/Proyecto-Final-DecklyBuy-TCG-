@@ -10,7 +10,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/ia")
-@CrossOrigin(origins = "http://localhost:5173", allowCredentials = "true")
+@CrossOrigin(origins = "https://localhost:5173", allowCredentials = "true")
 public class IaController {
 
     private final RestTemplate restTemplate;
@@ -22,7 +22,6 @@ public class IaController {
     @PostMapping(value = "/detect-score", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<IaResponse> detectScore(@RequestPart("file") MultipartFile file) {
         try {
-            // Mantén https porque tu servicio de IA corre con certificados
             String iaUrl = "https://localhost:5000/detect-score";
 
             ByteArrayResource fileResource = new ByteArrayResource(file.getBytes()) {

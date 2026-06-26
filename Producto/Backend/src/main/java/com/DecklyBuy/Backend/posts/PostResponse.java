@@ -16,7 +16,6 @@ public record PostResponse(
         Double confidence,
         String imagenUrl,      
         String categoriaCarta, 
-        // ─── PROPIEDAD AGREGADA EN LA FIRMA DEL RECORD ───
         String idioma,
         String descripcion,
         LocalDateTime fechaPublicacion,
@@ -39,7 +38,6 @@ public record PostResponse(
             post.getConfidence(),
             post.getImagenUrl(),
             post.getCategoriaCarta(), 
-            // ─── MAPEO DESDE LA ENTIDAD AGREGADO AQUÍ ───
             post.getIdioma(),
             post.getDescripcion(),
             post.getFechaPublicacion(),

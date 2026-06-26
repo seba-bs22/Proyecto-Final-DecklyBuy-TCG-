@@ -20,7 +20,6 @@ public class PostController {
         this.postService = postService;
     }
 
-    // Crear publicacion (Sin @Valid para evitar el cuelgue por cascade)
     @PostMapping
     public ResponseEntity<PostApiResponse> crearPost(@RequestBody PostRequest request,
                                                      HttpServletRequest httpRequest) {
@@ -29,14 +28,12 @@ public class PostController {
             return ResponseEntity.status(401).body(new PostApiResponse("No hay sesion activa", null));
         }
 
-        // Validaciones manuales ultraseguras
         if (request.precio() == null || request.precio() <= 0) {
             return ResponseEntity.badRequest().body(new PostApiResponse("El precio debe ser mayor a 0", null));
         }
         if (request.categoriaCarta() == null || request.categoriaCarta().isBlank()) {
             return ResponseEntity.badRequest().body(new PostApiResponse("La categoría de la carta es obligatoria", null));
         }
-        // ─── VALIDACIÓN MANUAL AGREGADA PARA EL IDIOMA ───
         if (request.idioma() == null || request.idioma().isBlank()) {
             return ResponseEntity.badRequest().body(new PostApiResponse("El idioma de la carta es obligatorio", null));
         }
@@ -49,7 +46,6 @@ public class PostController {
         return ResponseEntity.ok(new PostApiResponse("Post creado correctamente", saved));
     }
 
-    // Listar las publicaciones exclusivas del usuario autenticado actual
     @GetMapping("/me")
     public ResponseEntity<PostApiResponse> listarMisPosts(HttpServletRequest httpRequest) {
         HttpSession session = httpRequest.getSession(false);
@@ -62,7 +58,6 @@ public class PostController {
         return ResponseEntity.ok(new PostApiResponse("Mis posts recuperados exitosamente", misPosts));
     }
 
-    // ─── MODIFICADO: Listar publicaciones generales con Filtros Dinámicos ───
     @GetMapping
     public ResponseEntity<PostApiResponse> listarPosts(
             @RequestParam(value = "categorias", required = false) String categoria,
@@ -70,19 +65,16 @@ public class PostController {
             @RequestParam(value = "ordenar", required = false) String ordenar,
             @RequestParam(value = "buscar", required = false) String buscar) {
         
-        // Delegamos los filtros al servicio para que haga la magia
         List<PostResponse> posts = postService.getFilteredPosts(categoria, estado, ordenar, buscar);
         return ResponseEntity.ok(new PostApiResponse("Lista de posts", posts));
     }
 
-    // Obtener publicacion por ID
     @GetMapping("/{id}")
     public ResponseEntity<PostApiResponse> obtenerPost(@PathVariable Long id) {
         PostResponse post = postService.getPostById(id);
         return ResponseEntity.ok(new PostApiResponse("Post encontrado", post));
     }
 
-    // Editar publicacion
     @PutMapping("/{id}")
     public ResponseEntity<PostApiResponse> editarPost(@PathVariable Long id,
                                                       @RequestBody PostUpdateRequest request,
@@ -102,7 +94,6 @@ public class PostController {
         }
     }
 
-    // Eliminar publicacion
     @DeleteMapping("/{id}")
     public ResponseEntity<PostApiResponse> eliminarPost(@PathVariable Long id,
                                                          HttpServletRequest httpRequest) {
@@ -121,7 +112,6 @@ public class PostController {
         }
     }
 
-    // Obtener todos los posts de venta asociados a una carta específica del catálogo
     @GetMapping("/card/{cardId}")
     public ResponseEntity<PostApiResponse> listarPostsPorCarta(@PathVariable String cardId) {
         try {
@@ -129,6 +119,16 @@ public class PostController {
             return ResponseEntity.ok(new PostApiResponse("Publicaciones encontradas para la carta " + cardId, posts));
         } catch (Exception e) {
             return ResponseEntity.status(500).body(new PostApiResponse("Error al buscar publicaciones: " + e.getMessage(), null));
+        }
+    }
+
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<PostApiResponse> listarPostsPorVendedor(@PathVariable UUID userId) {
+        try {
+            List<PostResponse> posts = postService.getPostsByUser(userId);
+            return ResponseEntity.ok(new PostApiResponse("Publicaciones del vendedor recuperadas", posts));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(new PostApiResponse("Error al obtener las publicaciones: " + e.getMessage(), null));
         }
     }
 }

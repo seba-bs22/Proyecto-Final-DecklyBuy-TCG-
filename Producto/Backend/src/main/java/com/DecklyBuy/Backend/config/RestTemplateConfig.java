@@ -13,7 +13,6 @@ public class RestTemplateConfig {
 
     @Bean
     public RestTemplate restTemplate() throws Exception {
-        // TrustManager que acepta todos los certificados
         TrustManager[] trustAllCerts = new TrustManager[]{
             new X509TrustManager() {
                 public X509Certificate[] getAcceptedIssuers() { return new X509Certificate[0]; }
@@ -28,7 +27,6 @@ public class RestTemplateConfig {
         HttpsURLConnection.setDefaultSSLSocketFactory(sslContext.getSocketFactory());
         HttpsURLConnection.setDefaultHostnameVerifier((hostname, session) -> true);
 
-        // Usa el request factory simple de Spring
         SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
         return new RestTemplate(requestFactory);
     }

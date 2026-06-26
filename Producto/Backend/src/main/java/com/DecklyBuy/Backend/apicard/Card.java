@@ -8,7 +8,7 @@ import jakarta.validation.constraints.NotBlank;
 public class Card {
 
     @Id
-    private String id; // El ID de la API (ej: "sv03-105")
+    private String id; 
 
     @Column(nullable = false)
     @NotBlank(message = "El nombre de la carta es obligatorio")
@@ -17,17 +17,15 @@ public class Card {
     private String edicion;
 
     @Column(name = "local_id")
-    private String localId; // El número (ej: "105/167")
+    private String localId; 
 
-    private String image; // URL de la imagen oficial
+    private String image; 
 
-    @Column(name = "categoria_carta") // Mismo nombre de columna o el que prefieras
+    @Column(name = "categoria_carta") 
     private String categoriaCarta;
 
-    // Constructor vacío obligatorio para JPA
     public Card() {}
 
-    // --- Getters y Setters ---
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
 

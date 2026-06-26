@@ -20,7 +20,6 @@ public class UploadController {
     private String supabaseKey;
 
     @PostMapping("/upload")
-    @SuppressWarnings("null") 
     public ResponseEntity<Map<String, String>> uploadFile(@RequestParam("file") MultipartFile file) {
         try {
             if (file.isEmpty()) {
@@ -39,11 +38,7 @@ public class UploadController {
 
             String bucket = "posts";
             String fileName = "images/" + System.currentTimeMillis() + "-" + originalName;
-            
-            // Lógica oficial de Supabase Storage API: POST se usa para crear nuevos objetos
             String uploadUrl = supabaseUrl + "/storage/v1/object/" + bucket + "/" + fileName;
-
-            System.out.println("Intentando conectar con URL de Supabase: " + uploadUrl);
 
             RestTemplate restTemplate = new RestTemplate();
             HttpHeaders headers = new HttpHeaders();
@@ -53,8 +48,7 @@ public class UploadController {
 
             HttpEntity<byte[]> entity = new HttpEntity<>(file.getBytes(), headers);
 
-            // CORRECCIÓN: Se cambia HttpMethod.PUT a HttpMethod.POST
-            ResponseEntity<String> response = restTemplate.exchange(uploadUrl, HttpMethod.POST, entity, String.class);
+            ResponseEntity<String> response = restTemplate.postForEntity(uploadUrl, entity, String.class);
 
             if (response.getStatusCode().is2xxSuccessful()) {
                 String publicUrl = supabaseUrl + "/storage/v1/object/public/" + bucket + "/" + fileName;
@@ -64,16 +58,12 @@ public class UploadController {
                         .body(Map.of("error", "Supabase rechazó la subida con código: " + response.getStatusCode()));
             }
         } catch (org.springframework.web.client.HttpClientErrorException.NotFound ex) {
-            System.err.println("❌ ERROR 404 DE SUPABASE: Verifica que el bucket 'posts' exista y sea público.");
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(Map.of("error", "El bucket o ruta especificada en Supabase no existe (404)."));
         } catch (org.springframework.web.client.ResourceAccessException ex) {
-            System.err.println("❌ ERROR DE RED O SSL AL LLAMAR A SUPABASE: " + ex.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", "Error de red/SSL con Supabase: " + ex.getMessage()));
         } catch (Exception e) {
-            System.err.println("❌ EXCEPCIÓN GENERAL EN UPLOAD: " + e.getMessage());
-            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", "Causa interna: " + e.getMessage()));
         }

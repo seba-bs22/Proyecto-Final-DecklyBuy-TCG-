@@ -6,21 +6,35 @@ const LoginSuccess = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Validar la sesión contra el backend
     fetch("https://localhost:8080/api/auth/session", {
-      credentials: "include" // 🔑 envía la cookie JSESSIONID
+      credentials: "include"
     })
-      .then((res) => {
+      .then(async (res) => {
         if (res.ok) {
-          // Sesión válida → redirigir a home
-          navigate("/home", { replace: true });
+          const jsonResponse = await res.json().catch(() => null);
+          const userData = jsonResponse?.user; 
+
+          if (userData) {
+            localStorage.setItem("user", JSON.stringify(userData));
+
+            const isComplete = userData.perfilCompleto ?? userData.perfil_completo;
+            const username = (userData.nombreUsuario || userData.nombre_usuario || "").trim();
+            const phone = (userData.numeroContacto || userData.numero_contacto || "").trim();
+
+            // Si el backend dice que no está completo, o los campos vienen nulos/vacíos
+            if (isComplete === false || !username || !phone) {
+              navigate("/completar-perfil", { replace: true });
+            } else {
+              navigate("/home", { replace: true });
+            }
+          } else {
+            navigate("/login?error=session", { replace: true });
+          }
         } else {
-          // Sesión inválida → volver al login con error
           navigate("/login?error=session", { replace: true });
         }
       })
       .catch(() => {
-        // Error de red → volver al login
         navigate("/login?error=network", { replace: true });
       })
       .finally(() => setLoading(false));
@@ -29,11 +43,7 @@ const LoginSuccess = () => {
   return (
     <main className="login-success">
       <div className="loader-container">
-        <img
-          src="/loading.gif"
-          alt="Cargando..."
-          className="loader-gif"
-        />
+        <img src="/loading.gif" alt="Cargando..." className="loader-gif" />
         <h2>{loading ? "Iniciando sesión..." : "Redirigiendo..."}</h2>
       </div>
     </main>

@@ -1,7 +1,6 @@
-import React, { useEffect, useState, useMemo } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
+import { useParams, useNavigate, Link } from "react-router-dom";
 
-// Diccionario optimizado para banderas e idiomas
 const MAPA_IDIOMAS = {
   "Español": "🇪🇸 Español",
   "Inglés": "🇺🇸 Inglés",
@@ -14,19 +13,51 @@ const MAPA_IDIOMAS = {
   "Portugués": "🇧🇷 Portugués"
 };
 
+const WishlistButton = React.memo(({ estaEnWishlist, onClick, id }) => {
+  const handleClick = () => onClick(id);
+  return (
+    <button
+      onClick={handleClick}
+      title={estaEnWishlist ? "Quitar de la lista de deseos" : "Añadir a la lista de deseos"}
+      style={{
+        ...estilos.btnWishlistBase,
+        background: estaEnWishlist ? "#ffe4e6" : "#f1f5f9",
+        border: estaEnWishlist ? "1px solid #fecdd3" : "1px solid #cbd5e1"
+      }}
+    >
+      {estaEnWishlist ? "❤️" : "🤍"}
+    </button>
+  );
+});
+
+WishlistButton.displayName = "WishlistButton";
+
+const CartButton = React.memo(({ onClick, id }) => {
+  const handleClick = () => onClick(id);
+  return (
+    <button
+      onClick={handleClick}
+      title="Añadir al Carrito"
+      style={estilos.btnCart}
+      onMouseEnter={(e) => e.currentTarget.style.background = "#e2e8f0"}
+      onMouseLeave={(e) => e.currentTarget.style.background = "#f1f5f9"}
+    >
+      🛒
+    </button>
+  );
+});
+
+CartButton.displayName = "CartButton";
+
 const CardDetail = () => {
   const { cardId } = useParams();
   const navigate = useNavigate();
 
-  // Estados de datos
   const [cartaOficial, setCartaOficial] = useState(null);
   const [ofertasOriginales, setOfertasOriginales] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  // 💖 Mapeo dinámico: { [postId]: true/false } basado en tu BD
   const [wishlist, setWishlist] = useState({});
 
-  // Estados de filtros locales
   const [filtroIdioma, setFiltroIdioma] = useState("TODOS");
   const [filtroEstado, setFiltroEstado] = useState("TODOS");
   const [ordenPrecio, setOrdenPrecio] = useState("precio_asc");
@@ -35,23 +66,19 @@ const CardDetail = () => {
     const fetchDatosCarta = async () => {
       setLoading(true);
       try {
-        // Ejecutamos en paralelo la consulta de ofertas, API TCGdex y favoritos de la sesión
         const [resOfertas, resApiOficial, resWishlist] = await Promise.all([
           fetch(`https://localhost:8080/api/posts/card/${cardId}`, { credentials: "include" }),
           fetch(`https://api.tcgdex.net/v2/en/cards/${cardId}`),
           fetch(`https://localhost:8080/api/wishlist`, { credentials: "include" }).catch(() => null)
         ]);
 
-        // 1. Procesar ofertas del inventario local
         const resultOfertas = await resOfertas.json();
         const listaOfertas = resultOfertas.data || resultOfertas || [];
         setOfertasOriginales(listaOfertas);
 
-        // 2. Sincronizar corazones guardados previamente en tu entidad Wishlist
         if (resWishlist && resWishlist.ok) {
           const wishlistData = await resWishlist.json();
           const wishlistMap = {};
-          
           if (Array.isArray(wishlistData)) {
             wishlistData.forEach(item => {
               if (item?.post?.id) {
@@ -62,7 +89,6 @@ const CardDetail = () => {
           setWishlist(wishlistMap);
         }
 
-        // 3. Procesar info de la API externa
         if (resApiOficial.ok) {
           const dataOficial = await resApiOficial.json();
           setCartaOficial({
@@ -99,64 +125,45 @@ const CardDetail = () => {
     fetchDatosCarta();
   }, [cardId]);
 
-  // 🔗 ACCIONES DIRECTAS CON TU WishlistController
-  const toggleWishlist = async (postId) => {
+  const toggleWishlist = useCallback(async (postId) => {
     const estaEnFavoritos = !!wishlist[postId];
-
     try {
       if (estaEnFavoritos) {
         const response = await fetch(`https://localhost:8080/api/wishlist/remove/${postId}`, {
           method: "DELETE",
           credentials: "include"
         });
-
-        if (response.ok) {
-          setWishlist(prev => ({ ...prev, [postId]: false }));
-        } else if (response.status === 401) {
-          alert("Debes iniciar sesión para modificar tu lista de deseos.");
-        } else {
-          alert("No se pudo quitar de la lista de deseos.");
-        }
+        if (response.ok) setWishlist(prev => ({ ...prev, [postId]: false }));
+        else if (response.status === 401) alert("Debes iniciar sesión para modificar tu lista de deseos.");
+        else alert("No se pudo quitar de la lista de deseos.");
       } else {
         const response = await fetch(`https://localhost:8080/api/wishlist/add/${postId}`, {
           method: "POST",
           credentials: "include"
         });
-
-        if (response.ok) {
-          setWishlist(prev => ({ ...prev, [postId]: true }));
-        } else if (response.status === 401) {
-          alert("Por favor, inicia sesión para añadir cartas a tu lista de deseos.");
-        } else {
-          alert("No se pudo agregar a la lista de deseos.");
-        }
+        if (response.ok) setWishlist(prev => ({ ...prev, [postId]: true }));
+        else if (response.status === 401) alert("Por favor, inicia sesión para añadir cartas a tu lista de deseos.");
+        else alert("No se pudo agregar a la lista de deseos.");
       }
     } catch (error) {
       console.error("Error al conectar con el endpoint de la lista de deseos:", error);
     }
-  };
+  }, [wishlist]);
 
-  // 🛒 AGREGAR AL CARRITO
-  const handleAddToCart = async (postId) => {
+  const handleAddToCart = useCallback(async (postId) => {
     try {
       const response = await fetch(`https://localhost:8080/api/cart/add/${postId}`, {
         method: "POST",
         credentials: "include"
       });
-
-      if (response.ok) {
-        alert("¡Carta añadida al carrito con éxito! 🛒");
-      } else if (response.status === 401) {
-        alert("Por favor, inicia sesión para añadir productos al carrito.");
-      } else {
-        alert("No se pudo añadir al carrito. Puede que no quede stock disponible.");
-      }
+      if (response.ok) alert("¡Carta añadida al carrito con éxito! 🛒");
+      else if (response.status === 401) alert("Por favor, inicia sesión para añadir productos al carrito.");
+      else alert("No se pudo añadir al carrito. Puede que no quede stock disponible.");
     } catch (error) {
       console.error("Error al añadir al carrito:", error);
     }
-  };
+  }, []);
 
-  // Lógica de filtrado con useMemo
   const ofertasFiltradas = useMemo(() => {
     let resultado = [...ofertasOriginales];
 
@@ -183,79 +190,82 @@ const CardDetail = () => {
   };
 
   if (loading) {
-    return <div style={{ textAlign: "center", padding: "50px", color: "#64748b" }}>🔄 Desplegando hoja de datos e inventario...</div>;
+    return <div style={estilos.loadingMessage}>🔄 Desplegando hoja de datos e inventario...</div>;
   }
 
   return (
-    <main style={{ maxWidth: "1100px", margin: "0 auto", padding: "30px 20px", fontFamily: "sans-serif", textAlign: "left" }}>
-      
-      {/* SECCIÓN 1: INFORMACIÓN OFICIAL COMPLETA DE LA CARTA */}
+    <main style={estilos.main}>
       {cartaOficial && (
-        <section style={{ display: "flex", gap: "40px", flexWrap: "wrap", background: "#f8fafc", padding: "30px", borderRadius: "16px", border: "1px solid #e2e8f0", marginBottom: "40px" }}>
-          <div style={{ width: "220px", height: "300px", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <img src={`${cartaOficial.cardImage}/high.png`} alt={cartaOficial.nombre} style={{ maxHeight: "100%", maxWidth: "100%", objectFit: "contain" }} onError={(e) => { e.target.src = cartaOficial.cardImage }} />
+        <section style={estilos.headerSection}>
+          <div style={estilos.imgContainer}>
+            <img 
+              src={cartaOficial.cardImage ? `${cartaOficial.cardImage}/high.png` : ""} 
+              alt={cartaOficial.nombre} 
+              style={estilos.mainCardImg} 
+              onError={(e) => { e.currentTarget.src = cartaOficial.cardImage; }} 
+            />
           </div>
           
-          <div style={{ flex: 1, minWidth: "280px", display: "flex", flexDirection: "column", justifyContent: "center" }}>
-            <div style={{ display: "flex", gap: "8px", marginBottom: "12px" }}>
-              <span style={{ fontSize: "12px", fontWeight: "700", color: "#2563eb", background: "#dbeafe", padding: "4px 10px", borderRadius: "20px" }}>
+          <div style={estilos.infoContainer}>
+            <div style={estilos.tagRow}>
+              <span style={estilos.tagCategory}>
                 {cartaOficial.categoriaCarta || "Pokémon"}
               </span>
               {cartaOficial.stage && (
-                <span style={{ fontSize: "12px", fontWeight: "700", color: "#16a34a", background: "#dcfce7", padding: "4px 10px", borderRadius: "20px" }}>
+                <span style={estilos.tagStage}>
                   {cartaOficial.stage}
                 </span>
               )}
             </div>
 
-            <h1 style={{ fontSize: "2.2rem", margin: "0 0 10px 0", color: "#0f172a", fontWeight: "800" }}>{cartaOficial.nombre}</h1>
+            <h1 style={estilos.mainTitle}>{cartaOficial.nombre}</h1>
             
-            <p style={{ fontSize: "1.1rem", color: "#475569", margin: "0 0 6px 0" }}>🌐 Expansión: <strong>{cartaOficial.edicion}</strong></p>
-            <p style={{ fontSize: "1rem", color: "#64748b", margin: "0 0 6px 0" }}>🔢 Número de Colección: #{cartaOficial.numero}</p>
+            <p style={estilos.textEdicion}>🌐 Expansión: <strong>{cartaOficial.edicion}</strong></p>
+            <p style={estilos.textNumero}>🔢 Número de Colección: #{cartaOficial.numero}</p>
             
             {cartaOficial.hp && (
-              <p style={{ fontSize: "1rem", color: "#475569", margin: "0 0 6px 0" }}>
-                ❤️ HP: <strong style={{ color: "#dc2626" }}>{cartaOficial.hp}</strong> 
+              <p style={estilos.textHp}>
+                ❤️ HP: <strong style={estilos.hpValue}>{cartaOficial.hp}</strong> 
                 {cartaOficial.types?.length > 0 && ` | 🧬 Tipo: ${cartaOficial.types.join(", ")}`}
               </p>
             )}
             
             {cartaOficial.rarity && (
-              <p style={{ fontSize: "1rem", color: "#475569", margin: "0 0 12px 0" }}>
+              <p style={estilos.textRarity}>
                 ✨ Rareza: <strong>{cartaOficial.rarity}</strong> | 🎨 Ilustrador: <em>{cartaOficial.illustrator || "Desconocido"}</em>
               </p>
             )}
 
             {cartaOficial.effect && (
-              <div style={{ marginTop: "15px", paddingTop: "15px", borderTop: "1px solid #e2e8f0" }}>
-                <strong style={{ display: "block", fontSize: "0.85rem", color: "#475569", marginBottom: "6px", textTransform: "uppercase" }}>📜 Efecto de la Carta:</strong>
-                <p style={{ fontSize: "0.95rem", color: "#334155", background: "#f1f5f9", padding: "12px", borderRadius: "8px", borderLeft: "4px solid #cbd5e1", margin: 0, lineHeight: "1.4" }}>
+              <div style={estilos.blockDivider}>
+                <strong style={estilos.blockLabel}>📜 Efecto de la Carta:</strong>
+                <p style={estilos.blockText}>
                   {cartaOficial.effect}
                 </p>
               </div>
             )}
 
             {cartaOficial.description && (
-              <div style={{ margin: "15px 0 0 0", paddingTop: "15px", borderTop: !cartaOficial.effect ? "1px solid #e2e8f0" : "none" }}>
-                <strong style={{ display: "block", fontSize: "0.85rem", color: "#475569", marginBottom: "4px", textTransform: "uppercase" }}>📝 Descripción Pokédex:</strong>
-                <p style={{ fontSize: "0.95rem", color: "#334155", fontStyle: "italic", background: "#f1f5f9", padding: "12px", borderRadius: "8px", borderLeft: "4px solid #cbd5e1", margin: 0, lineHeight: "1.4" }}>
+              <div style={{ ...estilos.blockDivider, borderTop: !cartaOficial.effect ? "1px solid #e2e8f0" : "none", margin: "15px 0 0 0" }}>
+                <strong style={estilos.blockLabel}>📝 Descripción Pokédex:</strong>
+                <p style={{ ...estilos.blockText, fontStyle: "italic" }}>
                   "{cartaOficial.description}"
                 </p>
               </div>
             )}
 
             {cartaOficial.attacks?.length > 0 && (
-              <div style={{ marginTop: "15px", paddingTop: "15px", borderTop: "1px solid #e2e8f0" }}>
-                <h4 style={{ margin: "0 0 10px 0", fontSize: "0.95rem", color: "#1e293b", fontWeight: "700" }}>⚔️ Movimientos Oficiales:</h4>
-                <div style={{ display: "grid", gap: "10px", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
+              <div style={estilos.blockDivider}>
+                <h4 style={estilos.attacksTitle}>⚔️ Movimientos Oficiales:</h4>
+                <div style={estilos.attacksGrid}>
                   {cartaOficial.attacks.map((atk, index) => (
-                    <div key={index} style={{ background: "#ffffff", padding: "12px", borderRadius: "8px", border: "1px solid #e2e8f0", boxShadow: "0 1px 2px rgba(0,0,0,0.05)" }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "700", color: "#334155", fontSize: "0.95rem", marginBottom: "4px" }}>
+                    <div key={index} style={estilos.attackCard}>
+                      <div style={estilos.attackHeader}>
                         <span>{atk.name || `Efecto de ${cartaOficial.nombre}`}</span>
-                        {atk.damage && <span style={{ color: "#dc2626" }}>💥 {atk.damage}</span>}
+                        {atk.damage && <span style={estilos.attackDamage}>💥 {atk.damage}</span>}
                       </div>
                       {atk.effect && (
-                        <div style={{ fontSize: "0.85rem", color: "#475569", lineHeight: "1.4" }}>
+                        <div style={estilos.attackEffectText}>
                           {atk.effect}
                         </div>
                       )}
@@ -268,14 +278,13 @@ const CardDetail = () => {
         </section>
       )}
 
-      {/* SECCIÓN 2: BARRA DE FILTROS */}
-      <section style={{ marginBottom: "20px" }}>
-        <h2 style={{ fontSize: "1.4rem", color: "#0f172a", marginBottom: "15px", fontWeight: "700" }}>🛒 Ofertas disponibles en el mercado</h2>
-        <div style={{ display: "flex", gap: "15px", flexWrap: "wrap", background: "#ffffff", padding: "15px", borderRadius: "8px", border: "1px solid #e2e8f0" }}>
+      <section style={estilos.mb20}>
+        <h2 style={estilos.sectionTitle}>🛒 Ofertas disponibles en el mercado</h2>
+        <div style={estilos.filtersBar}>
           
-          <div style={{ flex: 1, minWidth: "160px" }}>
-            <label style={{ fontSize: "12px", fontWeight: "700", color: "#475569", display: "block", marginBottom: "4px" }}>IDIOMA</label>
-            <select value={filtroIdioma} onChange={(e) => setFiltroIdioma(e.target.value)} style={selectEstilo}>
+          <div style={estilos.filterContainer}>
+            <label style={estilos.filterLabel}>IDIOMA</label>
+            <select value={filtroIdioma} onChange={(e) => setFiltroIdioma(e.target.value)} style={estilos.select}>
               <option value="TODOS">Cualquier idioma</option>
               <option value="Español">Español 🇪🇸</option>
               <option value="Inglés">Inglés 🇺🇸</option>
@@ -289,9 +298,9 @@ const CardDetail = () => {
             </select>
           </div>
 
-          <div style={{ flex: 1, minWidth: "150px" }}>
-            <label style={{ fontSize: "12px", fontWeight: "700", color: "#475569", display: "block", marginBottom: "4px" }}>ESTADO DE LA CARTA</label>
-            <select value={filtroEstado} onChange={(e) => setFiltroEstado(e.target.value)} style={selectEstilo}>
+          <div style={estilos.filterContainer}>
+            <label style={estilos.filterLabel}>ESTADO DE LA CARTA</label>
+            <select value={filtroEstado} onChange={(e) => setFiltroEstado(e.target.value)} style={estilos.select}>
               <option value="TODOS">Cualquier estado</option>
               <option value="Near Mint">Near Mint (NM)</option>
               <option value="Lightly Played">Lightly Played (LP)</option>
@@ -299,9 +308,9 @@ const CardDetail = () => {
             </select>
           </div>
 
-          <div style={{ flex: 1, minWidth: "150px" }}>
-            <label style={{ fontSize: "12px", fontWeight: "700", color: "#475569", display: "block", marginBottom: "4px" }}>ORDENAR PRECIO</label>
-            <select value={ordenPrecio} onChange={(e) => setOrdenPrecio(e.target.value)} style={selectEstilo}>
+          <div style={estilos.filterContainer}>
+            <label style={estilos.filterLabel}>ORDENAR PRECIO</label>
+            <select value={ordenPrecio} onChange={(e) => setOrdenPrecio(e.target.value)} style={estilos.select}>
               <option value="precio_asc">Más barato primero</option>
               <option value="precio_desc">Más caro primero</option>
             </select>
@@ -310,103 +319,96 @@ const CardDetail = () => {
         </div>
       </section>
 
-      {/* SECCIÓN 3: TABLA DE PUBLICACIONES */}
-      <section style={{ border: "1px solid #e2e8f0", borderRadius: "12px", overflow: "hidden", background: "#fff" }}>
+      <section style={estilos.tableSection}>
         {ofertasFiltradas.length === 0 ? (
-          <div style={{ padding: "40px", textAlign: "center", color: "#94a3b8" }}>
+          <div style={estilos.emptyOffers}>
             No hay vendedores ofreciendo esta carta con los filtros seleccionados actualmente.
           </div>
         ) : (
-          <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "600px" }}>
+          <div style={estilos.overflowX}>
+            <table style={estilos.table}>
               <thead>
-                <tr style={{ background: "#f8fafc", borderBottom: "1px solid #e2e8f0" }}>
-                  <th style={thEstilo}>Vendedor</th>
-                  <th style={thEstilo}>Idioma</th>
-                  <th style={thEstilo}>Condición (IA)</th>
-                  <th style={thEstilo}>Precio Unitario</th>
-                  <th style={{ ...thEstilo, textAlign: "center" }}>Acción</th>
+                <tr style={estilos.tableHeadRow}>
+                  <th style={estilos.th}>Vendedor</th>
+                  <th style={estilos.th}>Idioma</th>
+                  <th style={estilos.th}>Condición (IA)</th>
+                  <th style={estilos.th}>Precio Unitario</th>
+                  <th style={{ ...estilos.th, textAlign: "center" }}>Acción</th>
                 </tr>
               </thead>
               <tbody>
                 {ofertasFiltradas.map((oferta) => {
                   const estaEnWishlist = !!wishlist[oferta.id];
                   return (
-                    <tr key={oferta.id} style={{ borderBottom: "1px solid #f1f5f9", transition: "background 0.2s" }} onMouseEnter={(e) => e.currentTarget.style.background = "#f8fafc"} onMouseLeave={(e) => e.currentTarget.style.background = "none"}>
-                      
-                      <td style={tdEstilo}>
-                        <div style={{ fontWeight: "600", color: "#0f172a" }}>{oferta.usuarioNombre || "Vendedor Deckly"}</div>
-                        <div style={{ fontSize: "12px", color: "#64748b" }}>Chile</div>
+                    <tr 
+                      key={oferta.id} 
+                      style={estilos.tableBodyRow} 
+                      onMouseEnter={(e) => { e.currentTarget.style.background = "#f8fafc"; }} 
+                      onMouseLeave={(e) => { e.currentTarget.style.background = "none"; }}
+                    >
+                      <td style={estilos.td}>
+                        {oferta.userId ? (
+                          <Link
+                            to={`/vendedor/${oferta.userId}`}
+                            style={estilos.sellerLink}
+                            onMouseEnter={(e) => { e.currentTarget.style.textDecoration = "underline"; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.textDecoration = "none"; }}
+                          >
+                            {oferta.nombreUsuario || "Vendedor Deckly"}
+                          </Link>
+                        ) : (
+                          <div style={estilos.sellerNameStatic}>
+                            {oferta.nombreUsuario || "Vendedor Deckly"}
+                          </div>
+                        )}
+                        <div style={estilos.sellerLocation}>Chile</div>
                       </td>
 
-                      <td style={tdEstilo}>
-                        <span style={{ fontWeight: "600", color: "#334155" }}>
+                      <td style={estilos.td}>
+                        <span style={estilos.langText}>
                           {MAPA_IDIOMAS[oferta.idioma] || `🌐 ${oferta.idioma}`}
                         </span>
                       </td>
 
-                      <td style={tdEstilo}>
-                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                          <span style={{ fontSize: "13px", fontWeight: "700", color: "#1e293b" }}>{oferta.estadoDetectado || "NM"}</span>
-                          <span style={{ fontSize: "11px", fontWeight: "700", color: "#166534", background: "#dcfce7", padding: "2px 6px", borderRadius: "4px" }}>
+                      <td style={estilos.td}>
+                        <div style={estilos.conditionContainer}>
+                          <span style={estilos.conditionText}>{oferta.estadoDetectado || "NM"}</span>
+                          <span style={estilos.scoreBadge}>
                             Imágenes IA: {oferta.score || 0}/10
                           </span>
                         </div>
                       </td>
 
-                      <td style={{ ...tdEstilo, fontSize: "16px", fontWeight: "700", color: "#b91c1c" }}>
+                      <td style={estilos.priceCell}>
                         {formatCLP(oferta.precio)}
                       </td>
 
-                      <td style={{ ...tdEstilo, textAlign: "center" }}>
-                        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
+                      <td style={{ ...estilos.td, textAlign: "center" }}>
+                        <div style={estilos.actionsContainer}>
                           
-                          {/* ❤️ BOTÓN LISTA DE DESEOS */}
-                          <button
-                            onClick={() => toggleWishlist(oferta.id)}
-                            title={estaEnWishlist ? "Quitar de la lista de deseos" : "Añadir a la lista de deseos"}
-                            style={{
-                              background: estaEnWishlist ? "#ffe4e6" : "#f1f5f9",
-                              border: estaEnWishlist ? "1px solid #fecdd3" : "1px solid #cbd5e1",
-                              borderRadius: "6px",
-                              padding: "8px 10px",
-                              cursor: "pointer",
-                              fontSize: "14px",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              transition: "all 0.2s"
-                            }}
+                          <WishlistButton 
+                            id={oferta.id}
+                            estaEnWishlist={estaEnWishlist} 
+                            onClick={toggleWishlist} 
+                          />
+
+                          <CartButton 
+                            id={oferta.id}
+                            onClick={handleAddToCart} 
+                          />
+
+                          <button 
+                            onClick={() => navigate(`/posts/${oferta.id}`)}
+                            style={estilos.btnSecondary}
+                            onMouseEnter={(e) => { e.currentTarget.style.background = "#e2e8f0"; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.background = "#f1f5f9"; }}
                           >
-                            {estaEnWishlist ? "❤️" : "🤍"}
+                            Ver detalles
                           </button>
 
-                          {/* 🛒 BOTÓN AGREGAR AL CARRITO */}
-                          <button
-                            onClick={() => handleAddToCart(oferta.id)}
-                            title="Añadir al Carrito"
-                            style={{
-                              background: "#f1f5f9",
-                              border: "1px solid #cbd5e1",
-                              borderRadius: "6px",
-                              padding: "8px 12px",
-                              cursor: "pointer",
-                              fontSize: "14px",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              transition: "all 0.2s"
-                            }}
-                            onMouseEnter={(e) => e.currentTarget.style.background = "#e2e8f0"}
-                            onMouseLeave={(e) => e.currentTarget.style.background = "#f1f5f9"}
-                          >
-                            🛒
-                          </button>
-
-                          {/* BOTÓN COMPRAR */}
                           <button 
                             onClick={() => navigate(`/checkout/${oferta.id}`)}
-                            style={{ background: "#2563eb", color: "#fff", border: "none", padding: "8px 16px", borderRadius: "6px", fontWeight: "600", cursor: "pointer", fontSize: "13px" }}
+                            style={estilos.btnPrimary}
                           >
                             Comprar
                           </button>
@@ -427,31 +429,58 @@ const CardDetail = () => {
   );
 };
 
-// Estilos estáticos
-const selectEstilo = {
-  width: "100%",
-  padding: "8px 10px",
-  borderRadius: "6px",
-  border: "1px solid #cbd5e1",
-  background: "#fff",
-  fontSize: "13px",
-  fontWeight: "500",
-  marginTop: "4px"
-};
-
-const thEstilo = {
-  padding: "12px 16px",
-  textAlign: "left",
-  fontSize: "12px",
-  fontWeight: "700",
-  color: "#475569",
-  textTransform: "uppercase"
-};
-
-const tdEstilo = {
-  padding: "14px 16px",
-  fontSize: "14px",
-  verticalAlign: "middle"
+const estilos = {
+  loadingMessage: { textAlign: "center", padding: "50px", color: "#64748b" },
+  main: { maxWidth: "1100px", margin: "0 auto", padding: "30px 20px", fontFamily: "sans-serif", textAlign: "left" },
+  headerSection: { display: "flex", gap: "40px", flexWrap: "wrap", background: "#f8fafc", padding: "30px", borderRadius: "16px", border: "1px solid #e2e8f0", marginBottom: "40px" },
+  imgContainer: { width: "220px", height: "300px", display: "flex", alignItems: "center", justifyContent: "center" },
+  mainCardImg: { maxHeight: "100%", maxWidth: "100%", objectFit: "contain" },
+  infoContainer: { flex: 1, minWidth: "280px", display: "flex", flexDirection: "column", justifyContent: "center" },
+  tagRow: { display: "flex", gap: "8px", marginBottom: "12px" },
+  tagCategory: { fontSize: "12px", fontWeight: "700", color: "#2563eb", background: "#dbeafe", padding: "4px 10px", borderRadius: "20px" },
+  tagStage: { fontSize: "12px", fontWeight: "700", color: "#16a34a", background: "#dcfce7", padding: "4px 10px", borderRadius: "20px" },
+  mainTitle: { fontSize: "2.2rem", margin: "0 0 10px 0", color: "#0f172a", fontWeight: "800" },
+  textEdicion: { fontSize: "1.1rem", color: "#475569", margin: "0 0 6px 0" },
+  textNumero: { fontSize: "1rem", color: "#64748b", margin: "0 0 6px 0" },
+  textHp: { fontSize: "1rem", color: "#475569", margin: "0 0 6px 0" },
+  hpValue: { color: "#dc2626" },
+  textRarity: { fontSize: "1rem", color: "#475569", margin: "0 0 12px 0" },
+  blockDivider: { marginTop: "15px", paddingTop: "15px", borderTop: "1px solid #e2e8f0" },
+  blockLabel: { display: "block", fontSize: "0.85rem", color: "#475569", marginBottom: "6px", textTransform: "uppercase" },
+  blockText: { fontSize: "0.95rem", color: "#334155", background: "#f1f5f9", padding: "12px", borderRadius: "8px", borderLeft: "4px solid #cbd5e1", margin: 0, lineHeight: "1.4" },
+  attacksTitle: { margin: "0 0 10px 0", fontSize: "0.95rem", color: "#1e293b", fontWeight: "700" },
+  attacksGrid: { display: "grid", gap: "10px", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" },
+  attackCard: { background: "#ffffff", padding: "12px", borderRadius: "8px", border: "1px solid #e2e8f0", boxShadow: "0 1px 2px rgba(0,0,0,0.05)" },
+  attackHeader: { display: "flex", justifyContent: "space-between", fontWeight: "700", color: "#334155", fontSize: "0.95rem", marginBottom: "4px" },
+  attackDamage: { color: "#dc2626" },
+  attackEffectText: { fontSize: "0.85rem", color: "#475569", lineHeight: "1.4" },
+  mb20: { marginBottom: "20px" },
+  sectionTitle: { fontSize: "1.4rem", color: "#0f172a", marginBottom: "15px", fontWeight: "700" },
+  filtersBar: { display: "flex", gap: "15px", flexWrap: "wrap", background: "#ffffff", padding: "15px", borderRadius: "8px", border: "1px solid #e2e8f0" },
+  filterContainer: { flex: 1, minWidth: "150px" },
+  filterLabel: { fontSize: "12px", fontWeight: "700", color: "#475569", display: "block", marginBottom: "4px" },
+  select: { width: "100%", padding: "8px 10px", borderRadius: "6px", border: "1px solid #cbd5e1", background: "#fff", fontSize: "13px", fontWeight: "500", marginTop: "4px", boxSizing: "border-box" },
+  tableSection: { border: "1px solid #e2e8f0", borderRadius: "12px", overflow: "hidden", background: "#fff" },
+  emptyOffers: { padding: "40px", textAlign: "center", color: "#94a3b8" },
+  overflowX: { overflowX: "auto" },
+  table: { width: "100%", borderCollapse: "collapse", minWidth: "600px" },
+  tableHeadRow: { background: "#f8fafc", borderBottom: "1px solid #e2e8f0" },
+  th: { padding: "12px 16px", textAlign: "left", fontSize: "12px", fontWeight: "700", color: "#475569", textTransform: "uppercase" },
+  tableBodyRow: { borderBottom: "1px solid #f1f5f9", transition: "background 0.2s" },
+  td: { padding: "14px 16px", fontSize: "14px", verticalAlign: "middle" },
+  sellerLink: { fontWeight: "600", color: "#2563eb", textDecoration: "none", cursor: "pointer" },
+  sellerNameStatic: { fontWeight: "600", color: "#0f172a" },
+  sellerLocation: { fontSize: "12px", color: "#64748b" },
+  langText: { fontWeight: "600", color: "#334155" },
+  conditionContainer: { display: "flex", alignItems: "center", gap: "8px" },
+  conditionText: { fontSize: "13px", fontWeight: "700", color: "#1e293b" },
+  scoreBadge: { fontSize: "11px", fontWeight: "700", color: "#166534", background: "#dcfce7", padding: "2px 6px", borderRadius: "4px" },
+  priceCell: { padding: "14px 16px", fontSize: "16px", fontWeight: "700", color: "#b91c1c", verticalAlign: "middle" },
+  actionsContainer: { display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" },
+  btnWishlistBase: { borderRadius: "6px", padding: "8px 10px", cursor: "pointer", fontSize: "14px", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s" },
+  btnCart: { background: "#f1f5f9", border: "1px solid #cbd5e1", borderRadius: "6px", padding: "8px 12px", cursor: "pointer", fontSize: "14px", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s" },
+  btnSecondary: { background: "#f1f5f9", color: "#334155", border: "1px solid #cbd5e1", padding: "8px 14px", borderRadius: "6px", fontWeight: "600", cursor: "pointer", fontSize: "13px", transition: "all 0.2s" },
+  btnPrimary: { background: "#2563eb", color: "#fff", border: "none", padding: "8px 16px", borderRadius: "6px", fontWeight: "600", cursor: "pointer", fontSize: "13px" }
 };
 
 export default CardDetail;

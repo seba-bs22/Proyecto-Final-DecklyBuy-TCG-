@@ -4,34 +4,26 @@ import { useLocation, useNavigate } from "react-router-dom";
 const VerifyCode = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const formData = location.state?.formData;
-
-  // 🔑 Si vienes desde Google, el email llega en la URL
-  const query = new URLSearchParams(location.search);
-  const emailFromUrl = query.get("email");
-
-  const email = formData?.email || emailFromUrl;
-
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
 
+  const formData = location.state?.formData;
+  const query = new URLSearchParams(location.search);
+  const email = formData?.email || query.get("email");
+
   const handleVerify = async () => {
     try {
-      // 🔑 Armar payload según el flujo
-      const payload = formData?.password
-        ? {
-            email: email.trim().toLowerCase(),
-            password: formData.password,
-            nombre: formData.nombre,
-            nombreUsuario: formData.nombreUsuario,
-            apellido: formData.apellido,
-            numeroContacto: formData.numeroContacto,
-            code: code.trim()
-          }
-        : {
-            email: email.trim().toLowerCase(),
-            code: code.trim()
-          };
+      const payload = {
+        email: email?.trim().toLowerCase(),
+        code: code.trim(),
+        ...(formData?.password && {
+          password: formData.password,
+          nombre: formData.nombre,
+          nombreUsuario: formData.nombreUsuario,
+          apellido: formData.apellido,
+          numeroContacto: formData.numeroContacto
+        })
+      };
 
       const response = await fetch("https://localhost:8080/api/auth/register-verify", {
         method: "POST",
@@ -47,7 +39,6 @@ const VerifyCode = () => {
         return;
       }
 
-      // ✅ Ya no usamos localStorage, confiamos en la cookie de sesión
       navigate("/home", { replace: true });
     } catch (err) {
       setError("No se pudo conectar con el servidor");
@@ -72,7 +63,6 @@ const VerifyCode = () => {
           VERIFICAR
         </button>
 
-        {/* Solo tiene sentido volver atrás si venías del registro tradicional */}
         {formData && (
           <button
             className="btn-secundario"

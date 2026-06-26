@@ -19,10 +19,6 @@ import jakarta.servlet.http.HttpSession;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import java.time.OffsetDateTime;
 
-/**
- * Controlador REST para gestión de usuarios.
- * Incluye endpoints para obtener y actualizar perfiles.
- */
 @RestController
 public class UserController {
 
@@ -34,7 +30,6 @@ public class UserController {
         this.passwordEncoder = passwordEncoder;
     }
 
-    // Obtener usuario autenticado
     @GetMapping("/user")
     public ResponseEntity<ApiResponse> getUser(
             @AuthenticationPrincipal OAuth2User principal,
@@ -60,7 +55,6 @@ public class UserController {
                         .body(new ApiResponse("Usuario no encontrado.", null)));
     }
 
-    // Obtener todos los usuarios
     @GetMapping("/api/users")
     public ResponseEntity<List<UserResponse>> getAllUsers() {
         List<UserResponse> users = userRepository.findAll()
@@ -71,7 +65,6 @@ public class UserController {
         return ResponseEntity.ok(users);
     }
 
-    // Obtener usuario por id
     @GetMapping("/api/users/{id}")
     public ResponseEntity<ApiResponse> getUserById(@PathVariable UUID id) {
         if (id == null) {
@@ -86,7 +79,6 @@ public class UserController {
                         .body(new ApiResponse("Usuario no encontrado.", null)));
     }
 
-    // Obtener usuario por email
     @GetMapping("/api/users/email/{email}")
     public ResponseEntity<ApiResponse> getUserByEmail(@PathVariable String email) {
         return userRepository.findByEmail(email.trim().toLowerCase())
@@ -96,7 +88,6 @@ public class UserController {
                         .body(new ApiResponse("Usuario no encontrado.", null)));
     }
 
-    // Actualizar perfil
     @PutMapping("/api/users/profile")
     public ResponseEntity<ApiResponse> updateProfile(
             @RequestBody ProfileUpdateRequest request,
@@ -146,7 +137,6 @@ public class UserController {
                 request.password() != null && !request.password().trim().isEmpty();
 
         if (quiereCambiarPassword) {
-            // 🚫 Bloqueo: si la cuenta es de Google, no permitir cambio de contraseña
             if ("GOOGLE".equals(user.getAuthProvider()) || user.getGoogleId() != null) {
                 return ResponseEntity.badRequest()
                         .body(new ApiResponse("Las cuentas vinculadas a Google no pueden cambiar contraseña.", null));

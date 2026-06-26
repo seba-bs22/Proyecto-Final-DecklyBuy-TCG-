@@ -14,6 +14,5 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 
     List<Post> findByUser_Id(UUID userId);
 
-    // Corregido con el guion bajo para mapear de forma explícita la propiedad ID dentro de Card
     List<Post> findByCard_Id(String cardId);
 }

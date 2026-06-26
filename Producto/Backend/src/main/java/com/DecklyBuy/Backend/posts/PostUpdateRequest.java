@@ -23,7 +23,6 @@ public record PostUpdateRequest(
 
         String categoriaCarta,
 
-        // ─── PARÁMETRO AGREGADO PARA ESTABILIZAR EL SERVICE EN LA EDICIÓN ───
         String idioma
 ) {
     public static class CardDto {

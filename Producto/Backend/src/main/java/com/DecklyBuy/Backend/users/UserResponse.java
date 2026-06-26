@@ -3,9 +3,6 @@ package com.DecklyBuy.Backend.users;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
-/**
- * DTO para devolver información de usuario en respuestas de API.
- */
 public record UserResponse(
         UUID id,
         String nombre,

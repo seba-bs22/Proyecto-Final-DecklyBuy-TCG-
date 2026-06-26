@@ -1,20 +1,22 @@
 import React, { useState } from "react";
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 const ForgotPassword = () => {
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!email) {
+    const cleanEmail = email.trim();
+
+    if (!cleanEmail) {
       setError("El campo correo no puede quedar vacío");
       return;
     }
-    if (!emailRegex.test(email)) {
+    if (!EMAIL_REGEX.test(cleanEmail)) {
       setError("Debes ingresar un correo válido. Ejemplo: usuario@correo.com");
       return;
     }
@@ -25,13 +27,13 @@ const ForgotPassword = () => {
       const response = await fetch("https://localhost:8080/api/auth/forgot-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email })
+        body: JSON.stringify({ email: cleanEmail })
       });
 
-      const data = await response.json();
+      const data = await response.json().catch(() => null);
 
       if (!response.ok) {
-        setError(data.message || "Error al enviar el correo de recuperación");
+        setError(data?.message || "Error al enviar el correo de recuperación");
         return;
       }
 
@@ -54,7 +56,7 @@ const ForgotPassword = () => {
             type="email"
             placeholder="Ej: usuario@correo.com"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e) => setEmail(e.target.value.replace(/\s/g, ""))}
           />
 
           {error && <p className="error-message">{error}</p>}

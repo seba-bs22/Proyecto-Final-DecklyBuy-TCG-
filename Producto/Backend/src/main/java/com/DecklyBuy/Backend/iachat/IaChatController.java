@@ -4,7 +4,6 @@ import org.springframework.ai.ollama.OllamaChatModel;
 import org.springframework.ai.chat.messages.SystemMessage;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.prompt.Prompt;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,7 +17,6 @@ public class IaChatController {
 
     private final OllamaChatModel chatModel;
 
-    @Autowired
     public IaChatController(OllamaChatModel chatModel) {
         this.chatModel = chatModel;
     }
@@ -31,7 +29,6 @@ public class IaChatController {
             return ResponseEntity.badRequest().body(Map.of("error", "El mensaje no puede estar vacio"));
         }
 
-        // Instrucciones del sistema para restringir las respuestas al ambito de TCG
         String sistemaInstrucciones = "Actuas como un experto mundial en cartas coleccionables de Pokemon TCG. "
                 + "Tu objetivo es asesorar al usuario sobre la originalidad de sus cartas, analisis de sets, numeraciones y rarezas. "
                 + "Se cordial pero directo. Si el usuario te pregunta sobre programacion, cocina, historia o cualquier tema ajeno a las "
@@ -46,7 +43,6 @@ public class IaChatController {
             String aiResponse = chatModel.call(prompt).getResult().getOutput().getContent();
             return ResponseEntity.ok(Map.of("response", aiResponse));
         } catch (Exception e) {
-            System.err.println("Error llamando a Ollama: " + e.getMessage());
             return ResponseEntity.status(500).body(Map.of("response", "Error al procesar el modelo de IA. Asegurate de que Ollama este abierto."));
         }
     }

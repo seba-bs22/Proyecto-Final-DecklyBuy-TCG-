@@ -35,8 +35,6 @@ public class WishlistService {
         wishlistRepository.save(wishlist);
     }
 
-    // Usamos esta anotación para decirle al IDE: "Tranquilo, ya validamos que no es nulo con el orElseThrow"
-    @SuppressWarnings("null")
     public void eliminarFavorito(UUID userId, Long postId) {
         if (userId == null || postId == null) {
             throw new IllegalArgumentException("El ID de usuario y el ID del post no pueden ser nulos");
@@ -45,7 +43,9 @@ public class WishlistService {
         Wishlist item = wishlistRepository.findByUserIdAndPostId(userId, postId)
                 .orElseThrow(() -> new RuntimeException("No se encontró el registro en la wishlist"));
         
-        wishlistRepository.delete(item);
+        if (item != null) {
+            wishlistRepository.delete(item);
+        }
     }
 
     public List<Wishlist> obtenerWishlistPorUsuario(UUID userId) {

@@ -31,7 +31,6 @@ public class Post {
     @NotBlank(message = "La categoría de la carta es obligatoria")
     private String categoriaCarta;
 
-    // ─── NUEVO ATRIBUTO AGREGADO DE FORMA SEGURA ───
     @Column(nullable = false)
     @NotBlank(message = "El idioma de la carta es obligatorio")
     private String idioma;
@@ -52,12 +51,9 @@ public class Post {
     @com.fasterxml.jackson.annotation.JsonIgnoreProperties({"posts", "hibernateLazyInitializer", "handler"})
     private User user;
 
-    // ─── MODIFICADO: Ciclo de vida para asegurar Herencia Automática ───
     @PrePersist
     public void prePersist() {
         this.fechaPublicacion = LocalDateTime.now();
-        
-        // Traspasa la clasificación del post a la entidad Card al crear
         if (this.card != null) {
             this.card.setCategoriaCarta(this.categoriaCarta);
         }
@@ -65,13 +61,11 @@ public class Post {
 
     @PreUpdate
     public void preUpdate() {
-        // Traspasa la clasificación del post a la entidad Card al actualizar/editar
         if (this.card != null) {
             this.card.setCategoriaCarta(this.categoriaCarta);
         }
     }
 
-    // --- Getters y Setters ---
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 

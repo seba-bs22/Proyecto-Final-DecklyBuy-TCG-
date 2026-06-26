@@ -4,16 +4,12 @@ import { useLocation, useNavigate } from "react-router-dom";
 const LoginVerify = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const formData = location.state?.formData; // viene desde Login.jsx
-
-  // 🔑 Si vienes desde Google, el email llega en la URL
-  const query = new URLSearchParams(location.search);
-  const emailFromUrl = query.get("email");
-
-  const email = formData?.email || emailFromUrl;
-
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
+
+  const formData = location.state?.formData;
+  const query = new URLSearchParams(location.search);
+  const email = formData?.email || query.get("email");
 
   const handleVerify = async () => {
     try {
@@ -22,10 +18,10 @@ const LoginVerify = () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email,
-          password: formData?.password, // solo existe en login tradicional
-          code
+          password: formData?.password,
+          code: code.trim()
         }),
-        credentials: "include" // 🔑 asegura que se guarde la cookie JSESSIONID
+        credentials: "include"
       });
 
       const data = await response.json().catch(() => null);
@@ -35,7 +31,6 @@ const LoginVerify = () => {
         return;
       }
 
-      // ✅ Ya no usamos localStorage, confiamos en la cookie de sesión
       navigate("/home", { replace: true });
     } catch (err) {
       setError("No se pudo conectar con el servidor");
@@ -60,7 +55,6 @@ const LoginVerify = () => {
           VERIFICAR
         </button>
 
-        {/* Solo tiene sentido volver atrás si venías del login tradicional */}
         {formData && (
           <button
             className="btn-secundario"

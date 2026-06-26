@@ -48,7 +48,6 @@ public class PostService {
     }
 
     @Transactional
-    @SuppressWarnings("null") // Silencia las advertencias estrictas de seguridad de nulos de tu IDE
     public PostResponse createPost(PostRequest request, UUID userId) {
         Objects.requireNonNull(userId, "El usuario es obligatorio.");
         if (request.card() == null || request.card().getId() == null) {
@@ -59,10 +58,11 @@ public class PostService {
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
         PostRequest.CardDto cardDto = request.card();
-        Card cardToAssociate = cardRepository.findById(cardDto.getId())
+        String cardId = Objects.requireNonNull(cardDto.getId(), "La información de la carta oficial es obligatoria.");
+        Card cardToAssociate = cardRepository.findById(cardId)
                 .orElseGet(() -> {
                     Card newCard = new Card();
-                    newCard.setId(cardDto.getId());
+                    newCard.setId(cardId);
                     newCard.setName(cardDto.getName());
                     newCard.setEdicion(cardDto.getEdicion());
                     newCard.setLocalId(cardDto.getLocalId());
@@ -77,10 +77,7 @@ public class PostService {
         post.setEstadoDetectado(request.estadoDetectado());
         post.setImagenUrl(request.imagenUrl()); 
         post.setCategoriaCarta(request.categoriaCarta()); 
-        
-        // ─── ASIGNACIÓN DE IDIOMA EN LA CREACIÓN ───
         post.setIdioma(request.idioma());
-
         post.setDescripcion(request.descripcion());
         post.setCard(cardToAssociate); 
         post.setUser(user);
@@ -90,7 +87,6 @@ public class PostService {
     }
 
     @Transactional
-    @SuppressWarnings("null") // Silencia las advertencias estrictas de seguridad de nulos de tu IDE
     public PostResponse updatePost(Long id, PostUpdateRequest request, UUID userId) {
         Objects.requireNonNull(id, "El id es obligatorio.");
         if (request.card() == null || request.card().getId() == null) {
@@ -105,10 +101,11 @@ public class PostService {
         }
 
         PostUpdateRequest.CardDto cardDto = request.card();
-        Card cardToAssociate = cardRepository.findById(cardDto.getId())
+        String cardId = Objects.requireNonNull(cardDto.getId(), "La información de la carta oficial es obligatoria.");
+        Card cardToAssociate = cardRepository.findById(cardId)
                 .orElseGet(() -> {
                     Card newCard = new Card();
-                    newCard.setId(cardDto.getId());
+                    newCard.setId(cardId);
                     newCard.setName(cardDto.getName());
                     newCard.setEdicion(cardDto.getEdicion());
                     newCard.setLocalId(cardDto.getLocalId());
@@ -124,7 +121,6 @@ public class PostService {
         post.setDescripcion(request.descripcion());
         post.setCard(cardToAssociate); 
 
-        // ─── ASIGNACIÓN DE IDIOMA EN LA EDICIÓN ───
         if (request.idioma() != null && !request.idioma().isBlank()) {
             post.setIdioma(request.idioma());
         }
@@ -185,23 +181,19 @@ public class PostService {
                 .toList();
     }
 
-    // ─── NUEVO MÉTODO CON FILTRADO EN STREAM TOTALMENTE DINÁMICO ───
     public List<PostResponse> getFilteredPosts(String categoria, String estado, String ordenar, String buscar) {
         Stream<Post> postStream = postRepository.findAll().stream();
 
-        // 1. Filtrar por clasificación/categoría si existe y no es "TODOS"
         if (categoria != null && !categoria.isBlank() && !categoria.equalsIgnoreCase("TODOS")) {
             postStream = postStream.filter(p -> p.getCategoriaCarta() != null 
                     && p.getCategoriaCarta().equalsIgnoreCase(categoria));
         }
 
-        // 2. Filtrar por estado físico detectado por la IA
         if (estado != null && !estado.isBlank() && !estado.equalsIgnoreCase("TODOS")) {
             postStream = postStream.filter(p -> p.getEstadoDetectado() != null 
                     && p.getEstadoDetectado().equalsIgnoreCase(estado));
         }
 
-        // 3. Filtrar por texto de búsqueda (nombre de la carta o su descripción)
         if (buscar != null && !buscar.isBlank()) {
             String criterio = buscar.toLowerCase();
             postStream = postStream.filter(p -> 
@@ -210,17 +202,15 @@ public class PostService {
             );
         }
 
-        // 4. Aplicar ordenamientos requeridos por el selector de React
         if (ordenar != null && !ordenar.isBlank() && !ordenar.equalsIgnoreCase("TODOS")) {
             switch (ordenar) {
                 case "precio_asc" -> postStream = postStream.sorted((p1, p2) -> Double.compare(p1.getPrecio(), p2.getPrecio()));
                 case "precio_desc" -> postStream = postStream.sorted((p1, p2) -> Double.compare(p2.getPrecio(), p1.getPrecio()));
                 case "score_desc" -> postStream = postStream.sorted((p1, p2) -> Integer.compare(p2.getScore() != null ? p2.getScore() : 0, p1.getScore() != null ? p1.getScore() : 0));
-                default -> { /* Por defecto mantendrá el orden de llegada natural o ID */ }
+                default -> { }
             }
         }
 
-        // Mapeamos el flujo de datos filtrado hacia tu DTO oficial y cerramos la lista
         return postStream.map(PostResponse::new).toList();
     }
 }

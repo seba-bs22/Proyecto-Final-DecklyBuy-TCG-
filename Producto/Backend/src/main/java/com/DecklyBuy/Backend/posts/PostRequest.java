@@ -23,7 +23,6 @@ public record PostRequest(
         @NotBlank(message = "La categoría de la carta es obligatoria")
         String categoriaCarta, 
 
-        // ─── PARÁMETRO AGREGADO DE FORMA SEGURA ───
         @NotBlank(message = "El idioma de la carta es obligatorio")
         String idioma,
 

@@ -8,6 +8,5 @@ import java.util.Optional;
 @Repository
 public interface CartRepository extends JpaRepository<Cart, Long> {
     
-    // Busca el carrito amarrado al usuario de la sesión
     Optional<Cart> findByUsuario(User usuario);
 }

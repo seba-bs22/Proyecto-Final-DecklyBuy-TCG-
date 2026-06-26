@@ -22,7 +22,6 @@ public class WishlistController {
         this.wishlistService = wishlistService;
     }
 
-    // 1. AGREGAR A WISHLIST
     @PostMapping("/add/{postId}")
     public ResponseEntity<?> addToWishlist(@PathVariable Long postId, HttpServletRequest httpRequest) {
         HttpSession session = httpRequest.getSession(false);
@@ -39,7 +38,6 @@ public class WishlistController {
         }
     }
 
-    // 2. ELIMINAR DE WISHLIST
     @DeleteMapping("/remove/{postId}")
     public ResponseEntity<?> removeFromWishlist(@PathVariable Long postId, HttpServletRequest httpRequest) {
         HttpSession session = httpRequest.getSession(false);
@@ -56,7 +54,6 @@ public class WishlistController {
         }
     }
 
-    // 3. OBTENER WISHLIST DE LA SESIÓN ACTUAL
     @GetMapping
     public ResponseEntity<?> getUserWishlist(HttpServletRequest httpRequest) {
         HttpSession session = httpRequest.getSession(false);
