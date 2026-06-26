@@ -19,6 +19,11 @@ const PostDetail = () => {
   
   const [post, setPost] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [enviandoChat, setEnviandoChat] = useState(false); // Estado para evitar doble clic
+
+  // 🔎 OJO: Aquí debes obtener el ID real del usuario que está navegando (comprador)
+  // Puedes traerlo de tu AuthContext o localStorage. Dejo un fallback por si acaso:
+  const usuarioActualId = localStorage.getItem("userId") || "TU_UUID_LOGUEADO_AQUI";
 
   useEffect(() => {
     const fetchPostDetail = async () => {
@@ -39,12 +44,50 @@ const PostDetail = () => {
       } catch (error) {
         console.error("Error al conectar con el servidor:", error);
       } finally {
-        setLoading(false);
+        loading && setLoading(false);
       }
     };
 
     if (id) fetchPostDetail();
   }, [id, navigate]);
+
+  // 🚀 NUEVA FUNCIÓN: Abre o crea el chat e interactúa con tu backend de Java
+  const handleContactarVendedor = async () => {
+    if (!idVendedorFinal) {
+      alert("No se pudo identificar al vendedor.");
+      return;
+    }
+    
+    if (usuarioActualId === idVendedorFinal) {
+      alert("¡No puedes abrir un chat contigo mismo!");
+      return;
+    }
+
+    setEnviandoChat(true);
+    try {
+      const response = await fetch('http://localhost:8080/api/chat/sala', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          compradorId: usuarioActualId,
+          vendedorId: idVendedorFinal
+        }),
+      });
+
+      if (response.ok) {
+        // Redirige directo a la bandeja de entrada que acabamos de armar
+        navigate('/messages');
+      } else {
+        console.error("Error del servidor al crear la sala");
+      }
+    } catch (error) {
+      console.error("Error de red al crear la sala de chat:", error);
+    } finally {
+      setEnviandoChat(false);
+    }
+  };
 
   const formatCLP = (value) => {
     return new Intl.NumberFormat("es-CL", {
@@ -153,14 +196,14 @@ const PostDetail = () => {
               </div>
             </div>
             
-            <a 
-              href={`https://wa.me/${post.numeroContacto?.replace(/\+/g, '') || ''}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={estilos.btnWhatsapp}
+            {/* 🛠️ CAMBIO AQUÍ: Ahora es un botón controlado por React que inicia el chat interno */}
+            <button 
+              onClick={handleContactarVendedor}
+              disabled={enviandoChat}
+              style={estilos.btnChatInterno}
             >
-              💬 Contactar
-            </a>
+              {enviandoChat ? "⏳ Creando sala..." : "💬 Chat Interno"}
+            </button>
           </div>
         </div>
       </div>
@@ -183,7 +226,8 @@ const estilos = {
   row: { display: "flex", justifyContent: "space-between", borderBottom: "1px solid #f1f5f9", paddingBottom: "6px" },
   vendorBox: { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px", background: "#f8fafc", borderRadius: "12px", border: "1px solid #e2e8f0" },
   avatar: { width: "45px", height: "45px", borderRadius: "50%", background: "#2563eb", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px", color: "#fff", fontWeight: "700", overflow: "hidden", flexShrink: 0 },
-  btnWhatsapp: { background: "#16a34a", color: "#fff", padding: "10px 16px", borderRadius: "8px", fontWeight: "600", textDecoration: "none", fontSize: "14px", display: "inline-block" }
+  // Estilo del botón del chat (reutiliza el color azul de Deckly para que combine impecable)
+  btnChatInterno: { background: "#2563eb", color: "#fff", padding: "10px 16px", borderRadius: "8px", fontWeight: "600", border: "none", cursor: "pointer", fontSize: "14px", display: "inline-block", transition: "background 0.2s" }
 };
 
 export default PostDetail;

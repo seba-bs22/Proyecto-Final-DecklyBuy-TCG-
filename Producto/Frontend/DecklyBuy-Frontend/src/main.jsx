@@ -15,7 +15,7 @@ import VerifyCode from './pages/VerifyCode.jsx';
 import CreatePost from './pages/CreatePost.jsx';
 import Posts from './pages/Posts.jsx';   
 import EditPost from './pages/EditPost.jsx'; 
-import PostDetail from './pages/PostDetail.jsx'; // 👈 IMPORTACIÓN DE LA NUEVA VISTA DETALLE
+import PostDetail from './pages/PostDetail.jsx'; 
 import LoginSuccess from './pages/LoginSuccess.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 import ForgotPassword from './pages/ForgotPassword.jsx';
@@ -27,8 +27,12 @@ import WishlistPage from './pages/Wishlist.jsx';
 import { CartProvider } from './context/CartContext.jsx'; 
 import Cart from './pages/Cart.jsx';
 import CompleteProfile from './pages/CompleteProfile.jsx';
+import MyChats from './components/MyChats.jsx'; // 👈 IMPORTACIÓN DE LA PANTALLA DE CHATS (Revisa si está en pages o components)
 
 import './style.css';
+
+// 🔍 Intentamos recuperar el ID del usuario logueado para pasárselo a la ruta
+const usuarioActualId = localStorage.getItem("userId") || "TU_UUID_LOGUEADO_AQUI";
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
@@ -63,13 +67,16 @@ ReactDOM.createRoot(document.getElementById('root')).render(
               <Route path="posts" element={<Posts />} /> 
               
               {/* ─── RUTAS MANEJADORAS DE PUBLICACIONES INDIVIDUALES ─── */}
-              <Route path="posts/:id" element={<PostDetail />} /> {/* 👈 NUEVA RUTA AGREGADA */}
+              <Route path="posts/:id" element={<PostDetail />} /> 
               <Route path="edit-post/:id" element={<EditPost />} /> 
               
               <Route path="offers" element={<Offers />} />
               <Route path="contact" element={<Contact />} />
               <Route path="account" element={<Account />} />
               <Route path="wishlist" element={<WishlistPage />} />
+              
+              {/* ─── NUEVA RUTA PARA LA BANDEJA DE ENTRADA DEL CHAT ─── */}
+              <Route path="messages" element={<MyChats usuarioActualId={usuarioActualId} />} /> {/* 👈 AGREGADA */}
             </Route>
 
           </Route>
