@@ -27,12 +27,9 @@ import WishlistPage from './pages/Wishlist.jsx';
 import { CartProvider } from './context/CartContext.jsx'; 
 import Cart from './pages/Cart.jsx';
 import CompleteProfile from './pages/CompleteProfile.jsx';
-import MyChats from './components/MyChats.jsx'; // 👈 IMPORTACIÓN DE LA PANTALLA DE CHATS (Revisa si está en pages o components)
+import MyChats from './pages/MyChats.jsx'; 
 
 import './style.css';
-
-// 🔍 Intentamos recuperar el ID del usuario logueado para pasárselo a la ruta
-const usuarioActualId = localStorage.getItem("userId") || "TU_UUID_LOGUEADO_AQUI";
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
@@ -76,7 +73,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
               <Route path="wishlist" element={<WishlistPage />} />
               
               {/* ─── NUEVA RUTA PARA LA BANDEJA DE ENTRADA DEL CHAT ─── */}
-              <Route path="messages" element={<MyChats usuarioActualId={usuarioActualId} />} /> {/* 👈 AGREGADA */}
+              <Route path="messages" element={<MyChats />} /> 
             </Route>
 
           </Route>

@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Client } from '@stomp/stompjs';
-import SockJS from 'sockjs-client';
 
 const Chat = ({ salaId, usuarioActualId }) => {
     const [mensajes, setMensajes] = useState([]);
@@ -9,39 +8,56 @@ const Chat = ({ salaId, usuarioActualId }) => {
     const stompClientRef = useRef(null);
     const mensajesEndRef = useRef(null);
 
-    // 1. Cargar el historial de mensajes antiguos (HTTP REST)
+    // 1. Efecto para cargar historial (Agregado credentials: 'include')
     useEffect(() => {
-        fetch(`https://localhost:8080/api/chat/sala/${salaId}/historial`)
-            .then(res => res.json())
-            .then(data => setMensajes(data))
+        if (!salaId) return;
+
+        fetch(`https://localhost:8080/api/chat/sala/${salaId}/historial`, {
+            method: 'GET',
+            credentials: 'include' // 🚨 CRÍTICO: Necesario para que Spring Security valide tu sesión
+        })
+            .then(res => {
+                if (!res.ok) throw new Error("Error al obtener el historial");
+                return res.json();
+            })
+            .then(data => setMensajes(data || []))
             .catch(err => console.error("Error al cargar historial:", err));
     }, [salaId]);
 
-    // 2. Conectarse al WebSocket en tiempo real al abrir el componente
+    // 2. Efecto para conectar el WebSocket
     useEffect(() => {
-        // Configuramos la conexión usando SockJS hacia el endpoint /ws del Backend
-        const socket = new SockJS('https://localhost:8080/ws');
+        if (!salaId) return;
+
         const client = new Client({
-            webSocketFactory: () => socket,
-            reconnectDelay: 5000, // Se reconecta automáticamente si se cae el servidor
+            // 🚨 CORRECCIÓN 1: Cambiado a 'wss://' porque tu servidor usa HTTPS (SSL local)
+            brokerURL: `wss://localhost:8080/ws`, 
+            reconnectDelay: 5000,
+            
+            // 🚨 CORRECCIÓN 2: Forzar WebSocket nativo sobre WSS para evitar intermediarios
+            webSocketFactory: () => new WebSocket(`wss://localhost:8080/ws`),
+
             onConnect: () => {
+                console.log("🚀 WebSocket conectado con éxito.");
                 setConectado(true);
-                // Nos suscribimos al canal de esta sala específica para recibir mensajes
-                client.subscribe(`/queue/sala/${salaId}`, (message) => {
+                
+                // 🚨 CORRECCIÓN 3: Tu WebSocketConfig.java tiene configurado el broker en "/topic", no en "/queue"
+                client.subscribe(`/topic/sala/${salaId}`, (message) => {
                     const mensajeRecibido = JSON.parse(message.body);
-                    // Agregamos el mensaje que llegó en tiempo real al estado
                     setMensajes((prev) => [...prev, mensajeRecibido]);
                 });
             },
             onDisconnect: () => {
+                console.log("🔌 WebSocket desconectado.");
                 setConectado(false);
+            },
+            onStompError: (frame) => {
+                console.error('STOMP Error:', frame.headers['message']);
             }
         });
 
         client.activate();
         stompClientRef.current = client;
 
-        // Limpieza: Desconectarse cuando el usuario cierre el chat
         return () => {
             if (stompClientRef.current) {
                 stompClientRef.current.deactivate();
@@ -49,28 +65,28 @@ const Chat = ({ salaId, usuarioActualId }) => {
         };
     }, [salaId]);
 
-    // Auto-scroll al último mensaje enviado o recibido
     useEffect(() => {
         mensajesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [mensajes]);
 
-    // 3. Enviar un mensaje (A través del WebSocket)
     const manejarEnviar = (e) => {
         e.preventDefault();
-        if (!nuevoMensaje.trim() || !conectado) return;
+        if (!nuevoMensaje.trim() || !conectado || !stompClientRef.current) return;
 
         const payload = {
+            salaId: salaId,
             remitenteId: usuarioActualId,
-            contenido: nuevoMensaje
+            contenido: nuevoMensaje.trim(),
+            fechaEnvio: new Date().toISOString()
         };
 
-        // Enviamos el mensaje al endpoint del controlador de Java
+        // 🚨 CORRECCIÓN 4: Sincronizado con el @MessageMapping de tu backend (`/chat.enviarMensaje/{salaId}`)
         stompClientRef.current.publish({
-            destination: `/app/chat.enviar.${salaId}`,
+            destination: `/app/chat.enviarMensaje/${salaId}`,
             body: JSON.stringify(payload)
         });
 
-        setNuevoMensaje(''); // Limpiar la barra de texto
+        setNuevoMensaje('');
     };
 
     return (
@@ -82,10 +98,8 @@ const Chat = ({ salaId, usuarioActualId }) => {
                 </span>
             </div>
 
-            {/* Ventana de burbujas de conversación */}
             <div style={styles.messagesBox}>
                 {mensajes.map((msg, index) => {
-                    // Verificamos si el mensaje lo envié yo o la otra persona
                     const esMio = msg.remitenteId === usuarioActualId || msg.remitente?.id === usuarioActualId;
                     return (
                         <div key={index} style={esMio ? styles.miMensajeRow : styles.otroMensajeRow}>
@@ -98,7 +112,6 @@ const Chat = ({ salaId, usuarioActualId }) => {
                 <div ref={mensajesEndRef} />
             </div>
 
-            {/* Barra inferior para escribir */}
             <form onSubmit={manejarEnviar} style={styles.inputArea}>
                 <input
                     type="text"
@@ -108,7 +121,7 @@ const Chat = ({ salaId, usuarioActualId }) => {
                     disabled={!conectado}
                     style={styles.input}
                 />
-                <button type="submit" disabled={!conectado} style={styles.button}>
+                <button type="submit" disabled={!conectado || !nuevoMensaje.trim()} style={styles.button}>
                     Enviar
                 </button>
             </form>
@@ -116,20 +129,19 @@ const Chat = ({ salaId, usuarioActualId }) => {
     );
 };
 
-// Estilos básicos en línea para que se vea ordenado de inmediato
 const styles = {
-    chatContainer: { width: '400px', height: '500px', border: '1px solid #ccc', borderRadius: '8px', display: 'flex', flexDirection: 'column', background: '#f9f9f9', fontFamily: 'sans-serif' },
-    header: { padding: '10px', background: '#242424', color: 'white', borderTopLeftRadius: '7px', borderTopRightRadius: '7px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
-    online: { color: '#4caf50', fontSize: '12px' },
-    offline: { color: '#f44336', fontSize: '12px' },
-    messagesBox: { flex: 1, padding: '10px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px' },
+    chatContainer: { width: '100%', height: '100%', display: 'flex', flexDirection: 'column', background: '#f9f9f9', fontFamily: 'sans-serif' },
+    header: { padding: '15px 20px', background: '#242424', color: 'white', display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
+    online: { color: '#4caf50', fontSize: '13px', fontWeight: '600' },
+    offline: { color: '#f44336', fontSize: '13px', fontWeight: '600' },
+    messagesBox: { flex: 1, padding: '20px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px' },
     miMensajeRow: { display: 'flex', justifyContent: 'flex-end' },
     otroMensajeRow: { display: 'flex', justifyContent: 'flex-start' },
-    miBurbuja: { background: '#007bff', color: 'white', padding: '8px 12px', borderRadius: '15px 15px 0px 15px', maxWidth: '70%' },
-    otraBurbuja: { background: '#e9ecef', color: '#333', padding: '8px 12px', borderRadius: '15px 15px 15px 0px', maxWidth: '70%' },
-    inputArea: { display: 'flex', padding: '10px', borderTop: '1px solid #ccc', gap: '5px' },
-    input: { flex: 1, padding: '8px', borderRadius: '4px', border: '1px solid #ccc', outline: 'none' },
-    button: { padding: '8px 15px', background: '#007bff', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }
+    miBurbuja: { background: '#007bff', color: 'white', padding: '8px 12px', borderRadius: '15px 15px 0px 15px', maxWidth: '70%', fontSize: '14px', wordBreak: 'break-word' },
+    otraBurbuja: { background: '#e9ecef', color: '#333', padding: '8px 12px', borderRadius: '15px 15px 15px 0px', maxWidth: '70%', fontSize: '14px', wordBreak: 'break-word' },
+    inputArea: { display: 'flex', padding: '15px', borderTop: '1px solid #ccc', gap: '8px', background: 'white' },
+    input: { flex: 1, padding: '10px', borderRadius: '6px', border: '1px solid #ccc', outline: 'none', fontSize: '14px' },
+    button: { padding: '10px 20px', background: '#007bff', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', fontSize: '14px' }
 };
 
 export default Chat;
