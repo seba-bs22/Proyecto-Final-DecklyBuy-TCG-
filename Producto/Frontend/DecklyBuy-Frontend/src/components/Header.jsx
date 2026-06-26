@@ -1,6 +1,6 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
-import { useCart } from '../context/CartContext'; // 🛒 Importamos el hook del carrito
+import { useCart } from '../context/CartContext'; 
 
 const Header = () => {
   const [open, setOpen] = useState(false);
@@ -8,7 +8,7 @@ const Header = () => {
   const [sugerencias, setSugerencias] = useState([]); 
   const [mostrarSugerencias, setMostrarSugerencias] = useState(false); 
   
-  const { getCartCount } = useCart(); // 🔥 Extraemos la función que cuenta las cartas en tiempo real
+  const { getCartCount } = useCart(); 
   
   const menuRef = useRef(null);
   const buscadorRef = useRef(null); 
@@ -181,10 +181,8 @@ const Header = () => {
           )}
         </div>
 
-        {/* 🛠️ CONTENEDOR DERECHO AGRUPADO: CARRITO + PERFIL */}
+
         <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
-          
-          {/* 🛒 ENLACE DEL CARRITO COMO BOTÓN ESTILIZADO */}
           <Link 
             to="/carrito" 
             style={{ 
@@ -250,7 +248,7 @@ const Header = () => {
           <li><Link to="/home" className={location.pathname === "/home" ? "active" : ""}>INICIO</Link></li>
           <li><Link to="/catalog" className={location.pathname.includes("/catalog") ? "active" : ""}>CATÁLOGO</Link></li>
           <li><Link to="/offers" className={location.pathname === "/offers" ? "active" : ""}>OFERTAS</Link></li>
-          <li><Link to="/contact" className={location.pathname === "/contact" ? "active" : ""}>CONTACTO</Link></li>
+          <li><Link to="/contact" className={location.pathname === "/contact" ? "active" : ""}>FAQ</Link></li>
         </ul>
       </nav>
     </header>

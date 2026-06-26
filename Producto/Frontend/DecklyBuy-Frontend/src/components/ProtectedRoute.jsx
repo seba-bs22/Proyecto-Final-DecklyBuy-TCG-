@@ -9,12 +9,11 @@ const ProtectedRoute = () => {
 
   useEffect(() => {
     fetch("https://localhost:8080/api/auth/me", {
-      credentials: "include" // 🔑 Envía la cookie JSESSIONID para validar sesión real
+      credentials: "include"
     })
       .then(async (res) => {
         if (res.ok) {
           const jsonResponse = await res.json().catch(() => null);
-          // Recuerda que tu backend envuelve los datos en '.user'
           const user = jsonResponse?.user; 
           
           if (user) {

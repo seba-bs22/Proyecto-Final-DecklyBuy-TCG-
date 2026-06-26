@@ -5,74 +5,96 @@ DecklyBuy-TCG es una plataforma web para la compra y venta de cartas Pokémon TC
 
 El proyecto está compuesto por un frontend en React, un backend en Spring Boot, un microservicio de IA en Python/FastAPI y una base de datos en Supabase. Su propósito es ofrecer un marketplace especializado, más confiable y transparente para vendedores y compradores de cartas Pokémon TCG.
 
-Configuracion inicial para iniciar el proyecto y sus servicios.
+///////////////////////////////////////////////////////////////////
+
+Integrantes: Sebastián Bravo Silva, Cristóbal Cisternas Tillera, Sebastián Fernandez.
 
 ///////////////////////////////////////////////////////////////////
-1. API DE IA
 
--Ubicarse en la carpeta del servicio (Ej: "cd "C:\Users\...\Proyecto Final DecklyBuy-TCG\Producto\DecklyBuy-IA"")
+Ramas del repositorio: 
 
--Crear el entorno virtual (SOLO si no existe): "python -m venv venv"
-
--Activar entorno virtual: ".\venv\Scripts\Activate"
-
--Instalar dependencias (SOLO primera vez o si cambia requirements.txt): "pip install -r requirements.txt"
-
--Iniciar API: "uvicorn main:app --reload --port 5000"
-
--Enlaces para pruebas: 
-
-API IA funcionando:
-http://localhost:5000
-
-Swagger/FastAPI Docs:
-http://localhost:5000/docs
-
--Endpoint principal: "POST http://localhost:5000/detect-score"
+* main: Proyecto completo
+* deploy: Configuración para despliegue
+* develop: Desarrollo
+* develop-mobile: Desarrollo mobile
 
 
 ///////////////////////////////////////////////////////////////////
 
-2. BACKEND SPRING BOOT
+## Descripción de los servicios y tecnologías utilizadas
 
--Ubicarse en la carpeta de backend (Ej: "cd "C:\Users\...\Proyecto Final DecklyBuy-TCG\Producto\Backend"")
+DecklyBuy TCG está construido como una plataforma dividida en distintos servicios, cada uno encargado de una parte específica del sistema. Esta separación permite mantener una arquitectura más ordenada, escalable y fácil de mantener.
 
--Instalar dependencias y compilar sin test: "mvn clean install -DskipTests"
+### Frontend Web
 
--Iniciar backend: "mvn spring-boot:run"
+El frontend web corresponde a la interfaz principal de la plataforma para navegadores. Permite a los usuarios visualizar el catálogo de cartas, revisar publicaciones, iniciar sesión, administrar su perfil, consultar preguntas frecuentes y navegar por las distintas secciones del marketplace.
 
--Swagger:
+**Tecnologías utilizadas:**
 
-http://localhost:8080/swagger-ui/index.html
+* React
+* Vite
+* JavaScript
+* React Router DOM
+* CSS personalizado
+* Fetch API para consumo de servicios REST
 
--Endpoints principales:
-GET  /api/users
-POST /api/auth/register
-POST /api/auth/login
-POST /api/ia/detect-score
+### Aplicación Mobile
 
+La aplicación móvil permite adaptar la experiencia de DecklyBuy TCG a dispositivos móviles. Incluye pantallas como inicio, catálogo, carrito, perfil, lista de deseados, mis publicaciones y creación de publicaciones. Su objetivo es entregar una navegación más cómoda desde celulares, manteniendo una estructura similar a la versión web.
 
-///////////////////////////////////////////////////////////////////
+**Tecnologías utilizadas:**
 
-3. FRONTEND REACT
+* React Native
+* Expo
+* Expo Router
+* TypeScript
+* Expo Image Picker
 
--Ubicarse en la carpeta (Ej: "cd "C:\Users\...\Proyecto Final DecklyBuy-TCG\Producto\Frontend\DecklyBuy-Frontend"")
+### Backend
 
--Instalar dependencias o si cambia package.json: "npm install"
+El backend centraliza la lógica principal del sistema. Se encarga de gestionar usuarios, autenticación, publicaciones, lista de deseados, carrito, carga de imágenes, conexión con la base de datos y comunicación con el servicio de inteligencia artificial.
 
--Iniciar frontend: "npm run dev"
+**Tecnologías utilizadas:**
 
--Enlace principal: http://localhost:5173
+* Java
+* Spring Boot
+* Maven
+* API REST
+* Integración con servicios externos
 
+### Base de datos y almacenamiento
 
-///////////////////////////////////////////////////////////////////
+DecklyBuy TCG utiliza Supabase como servicio de base de datos y almacenamiento. La base de datos permite guardar información de usuarios, publicaciones, cartas, favoritos y otros datos del sistema. El almacenamiento permite guardar imágenes asociadas a publicaciones y recursos necesarios para la plataforma.
 
-4. NOTAS IMPORTANTES
+**Tecnologías utilizadas:**
 
--Debe existir el archivo "application.properties" con las credenciales:
+* Supabase
+* PostgreSQL
+* Supabase Storage
 
-Supabase PostgreSQL
-Google OAuth
-configuración multipart
+### Servicio de Inteligencia Artificial
 
--Debe existir el modelo entrenado de ia: "Producto/DecklyBuy-IA/models/decklybuy_condition_v2.pt"
+El servicio de inteligencia artificial permite analizar imágenes de cartas para estimar su condición física. Este servicio funciona de forma independiente al backend principal y expone endpoints que permiten recibir una imagen, procesarla y devolver una clasificación junto con un puntaje referencial.
+
+**Tecnologías utilizadas:**
+
+* Python
+* FastAPI
+* Uvicorn
+* Ultralytics YOLO
+* PyTorch
+* OpenCV
+* Pillow
+* NumPy
+
+### Despliegue en la nube
+
+El proyecto está preparado para desplegar sus servicios en la nube, separando frontend, backend, servicio de inteligencia artificial y base de datos. Esto permite que cada parte del sistema pueda mantenerse, actualizarse y escalarse de forma independiente.
+
+**Servicios utilizados:**
+
+* Vercel para el frontend web
+* Render para el backend Spring Boot
+* Render para el servicio de inteligencia artificial
+* Supabase para base de datos y almacenamiento
+
