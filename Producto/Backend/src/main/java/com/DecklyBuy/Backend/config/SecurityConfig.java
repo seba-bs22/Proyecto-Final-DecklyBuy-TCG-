@@ -6,6 +6,7 @@ import com.DecklyBuy.Backend.users.UserResponse;
 
 import jakarta.servlet.http.HttpServletResponse;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -13,42 +14,54 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.access.channel.ChannelProcessingFilter; // 👈 NUEVA IMPORTACIÓN
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.web.filter.CorsFilter; // 👈 NUEVA IMPORTACIÓN
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 
 @Configuration
 public class SecurityConfig {
 
     private final GoogleAuthService googleAuthService;
 
+    @Value("${app.frontend.url}")
+    private String frontendUrl;
+
+    @Value("${app.cors.allowed-origins}")
+    private String allowedOrigins;
+
     public SecurityConfig(GoogleAuthService googleAuthService) {
         this.googleAuthService = googleAuthService;
+    }
+
+    private String front(String path) {
+        return frontendUrl.replaceAll("/$", "") + path;
     }
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-            // 🚨 SOLUCIÓN MAESTRA: Inyectamos el filtro de CORS al principio absoluto de la cadena de Spring
-            .addFilterBefore(new CorsFilter(Objects.requireNonNull(corsConfigurationSource())), ChannelProcessingFilter.class)
-            
             .csrf(csrf -> csrf.disable())
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // Permitir OPTIONS global
+                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 .requestMatchers(
-                    "/", "/login**", "/error",
-                    "/swagger-ui/**", "/swagger-ui.html",
+                    "/",
+                    "/login**",
+                    "/error",
+                    "/swagger-ui/**",
+                    "/swagger-ui.html",
                     "/v3/api-docs/**",
-                    "/api/ia/**", "/api/users/**", "/api/auth/**", "/api/chat/**" // 👈 Aseguramos /api/chat/** público
+                    "/api/ia/**",
+                    "/api/users/**",
+                    "/api/auth/**",
+                    "/api/chat/**",
+                    "/api/mercadopago/**"
                 ).permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/posts", "/api/posts/**").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/posts").authenticated()
@@ -70,16 +83,16 @@ public class SecurityConfig {
                         var oauthUser = (org.springframework.security.oauth2.core.user.OAuth2User) authentication.getPrincipal();
 
                         GoogleAuthResponse authResponse = googleAuthService.processGoogleUser(oauthUser);
-                        
+
                         if (authResponse == null) {
-                            response.sendRedirect("https://localhost:5173/login?error=google_service_null");
+                            response.sendRedirect(front("/login?error=google_service_null"));
                             return;
                         }
 
                         UserResponse userResponse = authResponse.user();
 
                         if (userResponse == null || userResponse.id() == null) {
-                            response.sendRedirect("https://localhost:5173/login?error=google_user_null");
+                            response.sendRedirect(front("/login?error=google_user_null"));
                             return;
                         }
 
@@ -87,24 +100,25 @@ public class SecurityConfig {
 
                         UsernamePasswordAuthenticationToken auth =
                             new UsernamePasswordAuthenticationToken(userResponse.email(), null, new ArrayList<>());
+
                         SecurityContextHolder.getContext().setAuthentication(auth);
 
-                        response.sendRedirect("https://localhost:5173/login-success");
+                        response.sendRedirect(front("/login-success"));
 
                     } catch (Exception e) {
                         e.printStackTrace();
-                        response.sendRedirect("https://localhost:5173/login?error=server_exception");
+                        response.sendRedirect(front("/login?error=server_exception"));
                     }
                 })
                 .failureHandler((request, response, exception) -> {
                     exception.printStackTrace();
-                    response.sendRedirect("https://localhost:5173/login?error=google_failure");
+                    response.sendRedirect(front("/login?error=google_failure"));
                 })
             )
             .logout(logout -> logout
                 .logoutUrl("/logout")
                 .deleteCookies("JSESSIONID")
-                .logoutSuccessUrl("https://localhost:5173/login")
+                .logoutSuccessUrl(front("/login"))
             );
 
         return http.build();
@@ -113,16 +127,28 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("https://localhost:5173", "http://localhost:5173"));
+
+        List<String> origins = Arrays.stream(allowedOrigins.split(","))
+                .map(String::trim)
+                .filter(origin -> !origin.isBlank())
+                .toList();
+
+        configuration.setAllowedOrigins(origins);
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        
-        // Cabeceras estrictas obligatorias para HTTPS local
-        configuration.setAllowedHeaders(List.of("Origin", "Content-Type", "Accept", "Authorization", "X-Requested-With", "Cache-Control"));
+        configuration.setAllowedHeaders(List.of(
+                "Origin",
+                "Content-Type",
+                "Accept",
+                "Authorization",
+                "X-Requested-With",
+                "Cache-Control"
+        ));
         configuration.setExposedHeaders(List.of("Authorization", "Link", "X-Total-Count"));
         configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
+
         return source;
     }
 

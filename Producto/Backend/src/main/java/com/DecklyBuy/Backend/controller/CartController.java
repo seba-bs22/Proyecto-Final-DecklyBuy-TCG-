@@ -19,7 +19,6 @@ import java.util.UUID; // 👈 Importamos UUID
 
 @RestController
 @RequestMapping("/api/cart")
-@CrossOrigin(origins = "https://localhost:5173", allowCredentials = "true") // 👈 Ajustado a https:// como tu frontend
 public class CartController {
 
     @Autowired

@@ -7,12 +7,13 @@ import com.DecklyBuy.Backend.users.UserResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
@@ -22,13 +23,15 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/auth")
-@CrossOrigin(origins = "https://localhost:5173")
 public class AuthController {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final VerificationService verificationService;
     private final EmailService emailService;
+
+    @Value("${app.frontend.url}")
+    private String frontendUrl;
 
     public AuthController(UserRepository userRepository,
                           PasswordEncoder passwordEncoder,
@@ -42,6 +45,10 @@ public class AuthController {
 
     private boolean isBlank(String value) {
         return value == null || value.trim().isEmpty();
+    }
+
+    private String front(String path) {
+        return frontendUrl.replaceAll("/$", "") + path;
     }
 
     private User crearYGuardarUsuario(RegisterRequest request) {
@@ -97,10 +104,11 @@ public class AuthController {
     @PostMapping("/register-init")
     public ResponseEntity<?> registerInit(@RequestBody Map<String, String> request) {
         String email = request.get("email");
+
         if (isBlank(email)) {
             return ResponseEntity.badRequest().body(AuthResponse.error("El correo es requerido."));
         }
-        
+
         String cleanEmail = email.trim().toLowerCase();
         String code = String.valueOf(new Random().nextInt(900000) + 100000);
 
@@ -113,8 +121,9 @@ public class AuthController {
     @PostMapping("/register-verify")
     public ResponseEntity<?> registerVerify(@RequestBody RegisterRequest request) {
         String emailClean = request.email() != null ? request.email().trim().toLowerCase() : "";
-        
+
         boolean valid = verificationService.checkCode(emailClean, request.code());
+
         if (!valid) {
             return ResponseEntity.badRequest().body(AuthResponse.error("Código inválido o expirado."));
         }
@@ -152,7 +161,7 @@ public class AuthController {
                 })
                 .orElseGet(() -> ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(AuthResponse.error("Correo o contraseña incorrectos.")));
     }
-    
+
     @PostMapping("/login-init")
     public ResponseEntity<?> loginInit(@RequestBody LoginRequest request) {
         if (isBlank(request.email()) || isBlank(request.password())) {
@@ -182,9 +191,15 @@ public class AuthController {
 
     @PostMapping("/login-verify")
     public ResponseEntity<?> loginVerify(@RequestBody Map<String, String> request, HttpServletRequest httpRequest) {
-        String email = request.get("email").trim().toLowerCase();
+        String emailRaw = request.get("email");
         String password = request.get("password");
         String code = request.get("code");
+
+        if (isBlank(emailRaw) || isBlank(password) || isBlank(code)) {
+            return ResponseEntity.badRequest().body(AuthResponse.error("Debes completar correo, contraseña y código."));
+        }
+
+        String email = emailRaw.trim().toLowerCase();
 
         return userRepository.findByEmail(email)
                 .map(user -> {
@@ -204,7 +219,8 @@ public class AuthController {
                     session.setAttribute("AUTH_USER_ID", user.getId());
 
                     UsernamePasswordAuthenticationToken auth =
-                        new UsernamePasswordAuthenticationToken(user.getEmail(), null, new ArrayList<>());
+                            new UsernamePasswordAuthenticationToken(user.getEmail(), null, new ArrayList<>());
+
                     SecurityContextHolder.getContext().setAuthentication(auth);
 
                     return ResponseEntity.ok(AuthResponse.ok("Login correcto.", new UserResponse(user)));
@@ -215,15 +231,17 @@ public class AuthController {
     @GetMapping({"/me", "/session"})
     public ResponseEntity<?> getCurrentUser(HttpServletRequest request) {
         HttpSession session = request.getSession(false);
+
         if (session == null || session.getAttribute("AUTH_USER_ID") == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(AuthResponse.error("No hay sesión activa."));
         }
 
         Object userIdObj = session.getAttribute("AUTH_USER_ID");
-        if (userIdObj == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(AuthResponse.error("No hay sesión activa."));
+
+        if (!(userIdObj instanceof UUID userId)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(AuthResponse.error("Sesión inválida."));
         }
-        UUID userId = (UUID) userIdObj;
+
         return userRepository.findById(userId)
                 .map(user -> ResponseEntity.ok(AuthResponse.ok("Usuario actual.", new UserResponse(user))))
                 .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).body(AuthResponse.error("Usuario no encontrado.")));
@@ -232,6 +250,7 @@ public class AuthController {
     @PutMapping("/complete-profile")
     public ResponseEntity<?> completeProfile(@RequestBody Map<String, String> request, HttpServletRequest httpRequest) {
         HttpSession session = httpRequest.getSession(false);
+
         if (session == null || session.getAttribute("AUTH_USER_ID") == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(AuthResponse.error("No autorizado."));
         }
@@ -248,10 +267,11 @@ public class AuthController {
         String usernameClean = nombreUsuario.trim().toLowerCase().replaceAll("\\s+", "");
 
         Object userIdObj = session.getAttribute("AUTH_USER_ID");
-        if (userIdObj == null || !(userIdObj instanceof UUID)) {
+
+        if (!(userIdObj instanceof UUID userId)) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(AuthResponse.error("Sesión inválida."));
         }
-        UUID userId = (UUID) userIdObj;
+
         User user = userRepository.findById(userId).orElse(null);
 
         if (user == null) {
@@ -273,6 +293,7 @@ public class AuthController {
 
         UsernamePasswordAuthenticationToken auth =
                 new UsernamePasswordAuthenticationToken(updatedUser.getEmail(), null, new ArrayList<>());
+
         SecurityContextHolder.getContext().setAuthentication(auth);
 
         return ResponseEntity.ok(AuthResponse.ok("Perfil completado correctamente.", new UserResponse(updatedUser)));
@@ -281,16 +302,20 @@ public class AuthController {
     @PostMapping("/logout")
     public ResponseEntity<?> logout(HttpServletRequest request) {
         HttpSession session = request.getSession(false);
+
         if (session != null) {
             session.invalidate();
         }
+
         SecurityContextHolder.clearContext();
+
         return ResponseEntity.ok(AuthResponse.ok("Sesión cerrada correctamente.", null));
     }
 
     @PostMapping("/forgot-password")
     public ResponseEntity<?> forgotPassword(@RequestBody Map<String, String> request) {
         String email = request.get("email");
+
         if (isBlank(email)) {
             return ResponseEntity.badRequest().body(AuthResponse.error("El correo es requerido."));
         }
@@ -298,13 +323,19 @@ public class AuthController {
         return userRepository.findByEmail(email.trim().toLowerCase())
                 .map(user -> {
                     String token = UUID.randomUUID().toString();
+
                     user.setResetToken(token);
                     user.setResetTokenExpiry(OffsetDateTime.now().plusHours(1));
+
                     userRepository.save(user);
 
-                    String resetLink = "https://localhost:5173/reset-password/" + token;
-                    emailService.sendEmail(user.getEmail(), "Recupera tu contraseña",
-                            "Haz clic en el siguiente enlace para restablecer tu contraseña: " + resetLink);
+                    String resetLink = front("/reset-password/" + token);
+
+                    emailService.sendEmail(
+                            user.getEmail(),
+                            "Recupera tu contraseña",
+                            "Haz clic en el siguiente enlace para restablecer tu contraseña: " + resetLink
+                    );
 
                     return ResponseEntity.ok(AuthResponse.ok("Correo de recuperación enviado.", null));
                 })
@@ -322,13 +353,14 @@ public class AuthController {
 
         return userRepository.findByResetToken(token)
                 .map(user -> {
-                    if (user.getResetTokenExpiry().isBefore(OffsetDateTime.now())) {
+                    if (user.getResetTokenExpiry() == null || user.getResetTokenExpiry().isBefore(OffsetDateTime.now())) {
                         return ResponseEntity.badRequest().body(AuthResponse.error("El token ha expirado."));
                     }
 
                     user.setPasswordHash(passwordEncoder.encode(newPassword));
                     user.setResetToken(null);
                     user.setResetTokenExpiry(null);
+
                     userRepository.save(user);
 
                     return ResponseEntity.ok(AuthResponse.ok("Contraseña restablecida correctamente.", null));

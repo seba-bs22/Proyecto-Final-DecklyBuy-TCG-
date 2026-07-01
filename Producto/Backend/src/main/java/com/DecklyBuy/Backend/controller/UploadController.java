@@ -10,7 +10,6 @@ import java.util.*;
 
 @RestController
 @RequestMapping("/api")
-@CrossOrigin(origins = "https://localhost:5173", allowCredentials = "true")
 public class UploadController {
 
     @Value("${supabase.url}")

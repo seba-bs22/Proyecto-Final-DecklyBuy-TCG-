@@ -10,7 +10,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/mercadopago")
-@CrossOrigin(origins = "http://localhost:5173") // Permite que tu React en Vite se conecte sin errores de CORS
 public class MercadoPagoController {
 
     @Autowired

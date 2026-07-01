@@ -13,7 +13,6 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/wishlist")
-@CrossOrigin(origins = "https://localhost:5173", allowCredentials = "true")
 public class WishlistController {
 
     private final WishlistService wishlistService;

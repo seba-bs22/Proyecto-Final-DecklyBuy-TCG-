@@ -8,13 +8,18 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class MercadoPagoConfigService {
 
-    @Value("${mercadopago.access.token}")
+    @Value("${mercadopago.access.token:}")
     private String accessToken;
 
     @PostConstruct
     public void initMP() {
-        // Esto le asigna tu token al SDK oficial de Mercado Pago
+        if (accessToken == null || accessToken.isBlank()) {
+            System.out.println("=== MERCADO PAGO NO CONFIGURADO: token vacío ===");
+            return;
+        }
+
         MercadoPagoConfig.setAccessToken(accessToken);
+
         System.out.println("=================================================");
         System.out.println("=== MERCADO PAGO INICIALIZADO CORRECTAMENTE ===");
         System.out.println("=================================================");
