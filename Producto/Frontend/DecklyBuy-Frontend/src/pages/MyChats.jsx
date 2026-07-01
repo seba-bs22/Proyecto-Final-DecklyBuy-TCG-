@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Chat from '../components/Chat';
 
 const MyChats = () => {
-    // Captura directa de la URL sin depender del ciclo de renderizado de hooks externos
+    // Captura directa de la URL sin depender del ciclo de renderizado de hooks externos 
     const urlParams = new URLSearchParams(window.location.search);
     const urlSalaId = urlParams.get('salaId');
 
