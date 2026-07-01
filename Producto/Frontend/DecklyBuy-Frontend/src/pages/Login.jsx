@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { googleLoginUrl } from "../config/api";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -27,10 +28,16 @@ const Login = () => {
     let errorMsg = "";
 
     if (!value) {
-      errorMsg = name === "email" ? "El campo correo no puede quedar vacío" : "El campo contraseña no puede quedar vacío";
+      errorMsg =
+        name === "email"
+          ? "El campo correo no puede quedar vacío"
+          : "El campo contraseña no puede quedar vacío";
     } else if (name === "email") {
-      if (!EMAIL_REGEX.test(value)) errorMsg = "Debes ingresar un correo válido. Ejemplo: usuario@correo.com";
-      else if (value.length > 100) errorMsg = "El correo es demasiado largo";
+      if (!EMAIL_REGEX.test(value)) {
+        errorMsg = "Debes ingresar un correo válido. Ejemplo: usuario@correo.com";
+      } else if (value.length > 100) {
+        errorMsg = "El correo es demasiado largo";
+      }
     } else if (name === "password" && value.length > 128) {
       errorMsg = "La contraseña excede el límite permitido";
     }
@@ -47,45 +54,56 @@ const Login = () => {
   };
 
   const handleLogin = async (e) => {
-    if (e) e.preventDefault(); 
-    
+    if (e) e.preventDefault();
+
     if (!formData.email || !formData.password || errors.email || errors.password) {
       setErrors((prev) => ({
         ...prev,
         email: !formData.email ? "El campo correo no puede quedar vacío" : prev.email,
-        password: !formData.password ? "El campo contraseña no puede quedar vacío" : prev.password
+        password: !formData.password
+          ? "El campo contraseña no puede quedar vacío"
+          : prev.password,
       }));
       return;
     }
 
     setLoading(true);
+
     try {
       const response = await fetch("https://localhost:8080/api/auth/login-init", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          email: formData.email.toLowerCase().trim(), 
-          password: formData.password 
+        body: JSON.stringify({
+          email: formData.email.toLowerCase().trim(),
+          password: formData.password,
         }),
-        credentials: "include"
+        credentials: "include",
       });
 
       const data = await response.json().catch(() => null);
 
       if (!response.ok) {
-        setErrors((prev) => ({ 
-          ...prev, 
-          backend: data?.message || "Error al iniciar sesión" 
+        setErrors((prev) => ({
+          ...prev,
+          backend: data?.message || "Error al iniciar sesión",
         }));
         return;
       }
 
-      navigate("/login-verify", { 
-        state: { formData: { email: formData.email, password: formData.password } } 
+      navigate("/login-verify", {
+        state: {
+          formData: {
+            email: formData.email,
+            password: formData.password,
+          },
+        },
       });
     } catch (error) {
       console.error("Error en login:", error);
-      setErrors((prev) => ({ ...prev, backend: "No se pudo conectar con el servidor" }));
+      setErrors((prev) => ({
+        ...prev,
+        backend: "No se pudo conectar con el servidor",
+      }));
     } finally {
       setLoading(false);
     }
@@ -93,9 +111,10 @@ const Login = () => {
 
   if (checkingSession) return <p>Verificando sesión...</p>;
 
-  const finalMessage = errors.email && errors.password 
-    ? "Debes ingresar correo y contraseña" 
-    : errors.email || errors.password || errors.backend;
+  const finalMessage =
+    errors.email && errors.password
+      ? "Debes ingresar correo y contraseña"
+      : errors.email || errors.password || errors.backend;
 
   const isButtonDisabled = loading || !!errors.email || !!errors.password;
 
@@ -138,9 +157,9 @@ const Login = () => {
 
           {finalMessage && <p className="error-message">{finalMessage}</p>}
 
-          <button 
-            type="submit" 
-            className="btn-enviar" 
+          <button
+            type="submit"
+            className="btn-enviar"
             disabled={isButtonDisabled}
             style={{ opacity: isButtonDisabled ? 0.6 : 1 }}
           >
@@ -148,15 +167,15 @@ const Login = () => {
           </button>
 
           <a
-            href={loading ? "#" : "https://localhost:8080/oauth2/authorization/google"}
+            href={loading ? "#" : googleLoginUrl}
             className="btn-google"
-            style={{ 
-              textDecoration: "none", 
-              display: "flex", 
-              alignItems: "center", 
+            style={{
+              textDecoration: "none",
+              display: "flex",
+              alignItems: "center",
               justifyContent: "center",
               opacity: loading ? 0.5 : 1,
-              pointerEvents: loading ? "none" : "auto"
+              pointerEvents: loading ? "none" : "auto",
             }}
           >
             <img src="/google-logo.png" alt="Google" className="google-icon" />

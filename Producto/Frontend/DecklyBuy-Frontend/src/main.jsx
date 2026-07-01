@@ -11,25 +11,70 @@ import Contact from './pages/Contact.jsx';
 import Login from './pages/Login.jsx';
 import LoginVerify from './pages/LoginVerify.jsx';
 import Register from './pages/Register.jsx';
-import VerifyCode from './pages/VerifyCode.jsx';   
+import VerifyCode from './pages/VerifyCode.jsx';
 import CreatePost from './pages/CreatePost.jsx';
-import Posts from './pages/Posts.jsx';   
-import EditPost from './pages/EditPost.jsx'; 
-import PostDetail from './pages/PostDetail.jsx'; 
+import Posts from './pages/Posts.jsx';
+import EditPost from './pages/EditPost.jsx';
+import PostDetail from './pages/PostDetail.jsx';
 import LoginSuccess from './pages/LoginSuccess.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 import ForgotPassword from './pages/ForgotPassword.jsx';
 import ResetPassword from './pages/ResetPassword.jsx';
-import Catalog from './pages/Catalog.jsx'; 
-import CardDetail from './pages/CardDetail.jsx'; 
-import SellerProfile from './pages/SellerProfile.jsx'; 
-import WishlistPage from './pages/Wishlist.jsx'; 
-import { CartProvider } from './context/CartContext.jsx'; 
+import Catalog from './pages/Catalog.jsx';
+import CardDetail from './pages/CardDetail.jsx';
+import SellerProfile from './pages/SellerProfile.jsx';
+import WishlistPage from './pages/Wishlist.jsx';
+import { CartProvider } from './context/CartContext.jsx';
 import Cart from './pages/Cart.jsx';
 import CompleteProfile from './pages/CompleteProfile.jsx';
-import MyChats from './pages/MyChats.jsx'; 
+import MyChats from './pages/MyChats.jsx';
+
+import { API_BASE_URL } from './config/api.js';
 
 import './style.css';
+
+/*
+  Adaptador temporal para despliegue.
+
+  Convierte automáticamente llamadas antiguas como:
+  - https://localhost:8080/api/...
+  - http://localhost:8080/api/...
+  - https://localhost:5000/api/ia/...
+  - http://localhost:5000/api/ia/...
+
+  hacia:
+  - VITE_API_URL en Vercel
+  - o http://localhost:8080 en local si no existe VITE_API_URL
+*/
+
+const originalFetch = window.fetch.bind(window);
+
+const replaceLocalApiUrl = (url) => {
+  if (typeof url !== 'string') return url;
+
+  return url
+    .replace(/^https:\/\/localhost:8080/, API_BASE_URL)
+    .replace(/^http:\/\/localhost:8080/, API_BASE_URL)
+    .replace(/^https:\/\/localhost:5000/, API_BASE_URL)
+    .replace(/^http:\/\/localhost:5000/, API_BASE_URL);
+};
+
+window.fetch = (input, init) => {
+  if (typeof input === 'string') {
+    return originalFetch(replaceLocalApiUrl(input), init);
+  }
+
+  if (input instanceof Request) {
+    const newUrl = replaceLocalApiUrl(input.url);
+
+    if (newUrl !== input.url) {
+      const newRequest = new Request(newUrl, input);
+      return originalFetch(newRequest, init);
+    }
+  }
+
+  return originalFetch(input, init);
+};
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
@@ -47,7 +92,6 @@ ReactDOM.createRoot(document.getElementById('root')).render(
 
           {/* 2. Filtro de Protección del Sistema */}
           <Route element={<ProtectedRoute />}>
-            
             {/* Si el perfil está INCOMPLETO, solo puede ver esto */}
             <Route path="/completar-perfil" element={<CompleteProfile />} />
 
@@ -61,21 +105,20 @@ ReactDOM.createRoot(document.getElementById('root')).render(
               <Route path="vendedor/:vendorId" element={<SellerProfile />} />
               <Route path="carrito" element={<Cart />} />
               <Route path="create-post" element={<CreatePost />} />
-              <Route path="posts" element={<Posts />} /> 
-              
+              <Route path="posts" element={<Posts />} />
+
               {/* ─── RUTAS MANEJADORAS DE PUBLICACIONES INDIVIDUALES ─── */}
-              <Route path="posts/:id" element={<PostDetail />} /> 
-              <Route path="edit-post/:id" element={<EditPost />} /> 
-              
+              <Route path="posts/:id" element={<PostDetail />} />
+              <Route path="edit-post/:id" element={<EditPost />} />
+
               <Route path="offers" element={<Offers />} />
               <Route path="contact" element={<Contact />} />
               <Route path="account" element={<Account />} />
               <Route path="wishlist" element={<WishlistPage />} />
-              
-              {/* ─── NUEVA RUTA PARA LA BANDEJA DE ENTRADA DEL CHAT ─── */}
-              <Route path="messages" element={<MyChats />} /> 
-            </Route>
 
+              {/* ─── NUEVA RUTA PARA LA BANDEJA DE ENTRADA DEL CHAT ─── */}
+              <Route path="messages" element={<MyChats />} />
+            </Route>
           </Route>
 
           {/* Fallback global */}
