@@ -1,116 +1,144 @@
 import React, { useState, useEffect } from 'react';
-import Chat from '../components/Chat';
+import { useLocation } from 'react-router-dom';
+import ChatWindow from "../components/ChatWindow";
 
 const MyChats = () => {
-    // Captura directa de la URL sin depender del ciclo de renderizado de hooks externos
-    const urlParams = new URLSearchParams(window.location.search);
-    const urlSalaId = urlParams.get('salaId');
-
-    const [usuarioId, setUsuarioId] = useState(null);
+    const location = useLocation();
+    const [usuarioActual, setUsuarioActual] = useState(null);
     const [salas, setSalas] = useState([]);
     const [salaSeleccionada, setSalaSeleccionada] = useState(null);
     const [cargando, setCargando] = useState(true);
 
+    // PASO 1: Obtener el usuario autenticado real
     useEffect(() => {
-        const inicializarChat = async () => {
+        const obtenerUsuario = async () => {
             try {
-                // 1. Identificar al usuario usando la cookie de sesión activa
-                const authRespuesta = await fetch('https://localhost:8080/api/auth/me', {
+                const response = await fetch('https://localhost:8080/api/auth/me', {
                     method: 'GET',
                     credentials: 'include'
                 });
-                
-                if (!authRespuesta.ok) throw new Error("Usuario no autenticado");
-                
-                const authData = await authRespuesta.json();
-                const idReal = authData?.user?.id;
-                setUsuarioId(idReal);
+                if (response.ok) {
+                    const data = await response.json();
+                    const usuario = data?.user || data;
+                    setUsuarioActual(usuario);
+                }
+            } catch (error) {
+                console.error("Error al verificar autenticación:", error);
+            }
+        };
+        obtenerUsuario();
+    }, []);
 
-                if (idReal) {
-                    // 2. Traer el listado de salas en las que participa el usuario
-                    const resSalas = await fetch(`https://localhost:8080/api/chat/usuario/${idReal}`, {
-                        method: 'GET',
-                        credentials: 'include'
-                    });
-                    
-                    if (resSalas.ok) {
-                        const listaSalas = await resSalas.json();
-                        setSalas(listaSalas || []);
+    // PASO 2: Traer las salas desde el Backend
+    useEffect(() => {
+        if (!usuarioActual?.id) return;
 
-                        // 3. Si hay un salaId en la URL, buscarlo en la lista para dejarlo activo
-                        if (urlSalaId) {
-                            const salaExistente = listaSalas.find(s => s.id.toString() === urlSalaId.toString());
-                            if (salaExistente) {
-                                setSalaSeleccionada(salaExistente);
-                            }
+        const cargarSalas = async () => {
+            try {
+                const response = await fetch(`https://localhost:8080/api/chat/usuario/${usuarioActual.id}`, {
+                    method: 'GET',
+                    credentials: 'include'
+                });
+                if (response.ok) {
+                    const dataBruta = await response.json();
+                    // Soportamos si el backend envuelve la lista en una propiedad data
+                    const listaSalas = Array.isArray(dataBruta) ? dataBruta : (dataBruta?.data || []);
+                    setSalas(listaSalas);
+
+                    const queryParams = new URLSearchParams(location.search);
+                    const salaIdDesdeUrl = queryParams.get('salaId');
+
+                    if (salaIdDesdeUrl && listaSalas.length > 0) {
+                        const salaEncontrada = listaSalas.find(s => String(s?.id) === String(salaIdDesdeUrl));
+                        if (salaEncontrada) {
+                            setSalaSeleccionada(salaEncontrada);
                         }
                     }
                 }
-            } catch (err) {
-                console.error("Error al inicializar la pantalla de chats:", err);
+            } catch (error) {
+                console.error("Error al traer las salas de chat:", error);
             } finally {
                 setCargando(false);
             }
         };
 
-        inicializarChat();
-    }, [urlSalaId]);
+        cargarSalas();
+    }, [usuarioActual, location.search]);
+
+    // 🛠️ FUNCIÓN OPTIMIZADA: Compara los UUIDs normalizados a minúsculas de forma segura
+    const obtenerNombreContraparte = (sala) => {
+        if (!usuarioActual?.id || !sala) return "Usuario";
+        
+        const idMiUsuario = String(usuarioActual.id).toLowerCase();
+        const idComprador = String(sala.comprador?.id || sala.compradorId || "").toLowerCase();
+        
+        if (idMiUsuario === idComprador) {
+            return sala.vendedor?.nombreUsuario || sala.vendedor?.nombre || `Vendedor_#${sala.vendedor?.id || 'Anónimo'}`;
+        } else {
+            return sala.comprador?.nombreUsuario || sala.comprador?.nombre || `Comprador_#${sala.comprador?.id || 'Anónimo'}`;
+        }
+    };
 
     if (cargando) {
-        return <div style={styles.fallback}>🔄 Cargando tus conversaciones...</div>;
+        return <div style={{ ...styles.container, justifyContent: 'center', alignItems: 'center' }}>🔄 Cargando tus mensajes...</div>;
     }
-
-    // Determinamos la sala activa: la seleccionada por clic o la que viene por URL de forma forzada
-    const salaActiva = salaSeleccionada || (urlSalaId ? { id: parseInt(urlSalaId) } : null);
 
     return (
         <div style={styles.container}>
-            {/* Barra lateral Izquierda: Lista de Chats */}
+            
+            {/* BARRA LATERAL IZQUIERDA: LISTA DE CHATS */}
             <div style={styles.sidebar}>
-                <h3 style={styles.sidebarTitle}>Mensajes</h3>
-                {salas.length === 0 ? (
-                    <p style={styles.noChats}>No tienes chats activos aún.</p>
-                ) : (
-                    <div style={styles.listaSalas}>
-                        {salas.map((sala) => {
-                            if (!sala.comprador || !sala.vendedor) return null;
-
-                            const esComprador = sala.comprador.id === usuarioId;
-                            const elOtroUsuario = esComprador ? sala.vendedor : sala.comprador;
-                            const rol = esComprador ? "Vendedor" : "Comprador";
-                            const nombreMostrar = elOtroUsuario.nombreUsuario || elOtroUsuario.username || "Usuario";
-
-                            const estaActivo = salaActiva?.id === sala.id;
-
+                <h3 style={styles.sidebarTitle}>Mis Mensajes</h3>
+                <div style={styles.listaSalas}>
+                    {salas.length === 0 ? (
+                        <p style={{ padding: '20px', color: '#64748b', fontSize: '14px', textAlign: 'center' }}>
+                            No tienes conversaciones activas todavía.
+                        </p>
+                    ) : (
+                        salas.map((sala) => {
+                            if (!sala) return null;
+                            
+                            const usernameVisual = obtenerNombreContraparte(sala);
+                            const idMiUsuario = String(usuarioActual?.id || "").toLowerCase();
+                            const idComprador = String(sala.comprador?.id || sala.compradorId || "").toLowerCase();
+                            const soyComprador = idMiUsuario === idComprador;
+                            
                             return (
-                                <div
-                                    key={sala.id}
+                                <div 
+                                    key={sala.id} 
+                                    onClick={() => setSalaSeleccionada(sala)}
                                     style={{
                                         ...styles.salaItem,
-                                        ...(estaActivo ? styles.salaActiva : {}),
+                                        background: salaSeleccionada?.id === sala.id ? '#e2e8f0' : 'transparent',
+                                        fontWeight: salaSeleccionada?.id === sala.id ? '600' : 'normal'
                                     }}
-                                    onClick={() => setSalaSeleccionada(sala)}
                                 >
-                                    <div style={styles.avatar}>
-                                        {nombreMostrar.charAt(0).toUpperCase()}
+                                    <div style={styles.avatarMini}>
+                                        {usernameVisual.charAt(0).toUpperCase()}
                                     </div>
-                                    <div style={styles.salaInfo}>
-                                        <span style={styles.nombre}>{nombreMostrar}</span>
-                                        <span style={styles.rolLabel}>{rol}</span>
+                                    
+                                    <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                                        <span style={{ textOverflow: 'ellipsis', whiteSpace: 'nowrap', overflow: 'hidden' }}>
+                                            {usernameVisual}
+                                        </span>
+                                        <span style={{ fontSize: '11px', color: '#64748b', fontWeight: '400' }}>
+                                            {soyComprador ? 'Vendedor' : 'Comprador'}
+                                        </span>
                                     </div>
                                 </div>
                             );
-                        })}
-                    </div>
-                )}
+                        })
+                    )}
+                </div>
             </div>
 
-            {/* Lado Derecho: La ventana del Chat abierto */}
+            {/* LADO DERECHO: VENTANA DEL CHAT PROTEGIDA */}
             <div style={styles.chatArea}>
-                {salaActiva ? (
-                    <Chat 
-                        salaId={salaActiva.id} 
-                        usuarioActualId={usuarioId} 
+                {salaSeleccionada ? (
+                    <ChatWindow 
+                        key={salaSeleccionada.id} 
+                        sala={salaSeleccionada} 
+                        usuarioActual={usuarioActual} 
                     />
                 ) : (
                     <div style={styles.placeholder}>
@@ -118,25 +146,20 @@ const MyChats = () => {
                     </div>
                 )}
             </div>
+
         </div>
     );
 };
 
 const styles = {
-    container: { display: 'flex', width: '900px', height: '600px', border: '1px solid #e2e8f0', borderRadius: '16px', background: '#fff', overflow: 'hidden', margin: '40px auto', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05)', fontFamily: 'sans-serif' },
+    container: { display: 'flex', width: '950px', height: '600px', border: '1px solid #e2e8f0', borderRadius: '16px', background: '#fff', overflow: 'hidden', margin: '40px auto', fontFamily: 'sans-serif', boxShadow: '0 4px 20px rgba(0,0,0,0.05)' },
     sidebar: { width: '320px', borderRight: '1px solid #f1f5f9', background: '#f8fafc', display: 'flex', flexDirection: 'column' },
-    sidebarTitle: { padding: '20px', margin: 0, borderBottom: '1px solid #f1f5f9', fontSize: '18px', fontWeight: '700', color: '#0f172a' },
-    noChats: { padding: '30px 20px', textAlign: 'center', color: '#64748b', fontSize: '14px', margin: 0 },
+    sidebarTitle: { padding: '20px', margin: 0, borderBottom: '1px solid #f1f5f9', fontSize: '18px', color: '#0f172a', fontWeight: '700' },
     listaSalas: { flex: 1, overflowY: 'auto' },
-    salaItem: { display: 'flex', alignItems: 'center', padding: '14px 20px', borderBottom: '1px solid #f1f5f9', cursor: 'pointer', transition: 'background 0.2s ease' },
-    salaActiva: { background: '#f0f7ff', borderLeft: '4px solid #2563eb' },
-    avatar: { width: '42px', height: '42px', borderRadius: '50%', background: '#2563eb', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700', marginRight: '14px', fontSize: '15px' },
-    salaInfo: { display: 'flex', flexDirection: 'column', gap: '4px' },
-    nombre: { fontWeight: '600', color: '#1e293b', fontSize: '14px' },
-    rolLabel: { fontSize: '11px', color: '#2563eb', background: '#eff6ff', padding: '2px 8px', borderRadius: '6px', fontWeight: '600', width: 'fit-content' },
-    chatArea: { flex: 1, display: 'flex', flexDirection: 'column', background: '#fff', height: '100%', width: '100%' },
-    placeholder: { flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', color: '#64748b', fontSize: '14px', padding: '20px', background: '#fafafa' },
-    fallback: { textAlign: 'center', padding: '50px', color: '#64748b', fontFamily: 'sans-serif', fontSize: '15px' }
+    salaItem: { display: 'flex', alignItems: 'center', gap: '12px', padding: '14px 20px', borderBottom: '1px solid #f1f5f9', cursor: 'pointer', transition: 'background 0.2s', fontSize: '14px', color: '#334155' },
+    avatarMini: { width: '32px', height: '32px', borderRadius: '50%', background: '#2563eb', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', fontWeight: '700', flexShrink: 0 },
+    chatArea: { flex: 1, display: 'flex', flexDirection: 'column', background: '#fafafa' },
+    placeholder: { flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', color: '#64748b', fontSize: '14px' }
 };
 
 export default MyChats;

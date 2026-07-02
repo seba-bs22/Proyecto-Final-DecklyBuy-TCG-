@@ -1,69 +1,65 @@
 package com.DecklyBuy.Backend.controller;
 
+import com.DecklyBuy.Backend.chat.ChatRoom;
+import com.DecklyBuy.Backend.chat.ChatMessage;
+import com.DecklyBuy.Backend.chat.ChatService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/chat")
 @CrossOrigin(origins = "http://localhost:5173", allowCredentials = "true") 
 public class ChatController {
 
-    // 1. ENDPOINT: Crear o recuperar sala
+    @Autowired
+    private ChatService chatService;
+
     @PostMapping("/sala")
-    public ResponseEntity<?> crearSala(@RequestBody SalaRequest request) {
-        return ResponseEntity.ok(new SalaResponse(1L, request.getCompradorId(), request.getVendedorId()));
+    public ResponseEntity<ChatRoom> crearSala(@RequestBody SalaRequest request) {
+        UUID comprador = Objects.requireNonNull(UUID.fromString(request.getCompradorId()));
+        UUID vendedor = Objects.requireNonNull(UUID.fromString(request.getVendedorId()));
+        Long postId = Objects.requireNonNull(request.getPostId(), "El postId es obligatorio");
+        ChatRoom sala = chatService.obtenerOCrearSala(comprador, vendedor, postId);
+        return ResponseEntity.ok(sala);
     }
 
-    // 2. ENDPOINT: Traer salas por ID de usuario
     @GetMapping("/usuario/{usuarioId}")
-    public ResponseEntity<List<?>> obtenerSalasPorUsuario(@PathVariable String usuarioId) {
-        List<Object> salasMock = new ArrayList<>();
+    public ResponseEntity<List<ChatRoom>> obtenerSalasPorUsuario(@PathVariable("usuarioId") UUID usuarioId) {
+        // 🛠️ MODIFICADO: Dejamos que Spring convierta directamente a UUID para evitar problemas de codificación de texto
+        UUID uuid = Objects.requireNonNull(usuarioId, "El ID de usuario no puede ser nulo");
         
-        UserMock comprador = new UserMock(usuarioId, "Tu Usuario", "Comprador");
-        UserMock vendedor = new UserMock("f208a9a5-ad47-4765-b741-d245c0c839bd", "Vendedor Deckly", "Vendedor");
+        System.out.println("====== PROBANDO ENDPOINT VIA URL ======");
+        System.out.println("Buscando chats para el usuario: " + uuid);
         
-        salasMock.add(new SalaCompletaResponse(1L, comprador, vendedor));
+        List<ChatRoom> salas = chatService.listarSalasDeUsuario(uuid);
         
-        return ResponseEntity.ok(salasMock);
+        System.out.println("Salas encontradas con éxito: " + salas.size());
+        System.out.println("=======================================");
+        
+        return ResponseEntity.ok(salas);
     }
 
-    // 3. 🚀 ENDPOINT OPTIMIZADO: Historial de mensajes de la sala
     @GetMapping("/sala/{salaId}/historial")
-    public ResponseEntity<List<?>> obtenerHistorial(@PathVariable Long salaId) {
-        List<MensajeMock> historial = new ArrayList<>();
-        
-        // 🚨 CAMBIO AQUÍ: Eliminamos el mensaje molesto "¡Hola! Sí, la carta..." 
-        // Dejamos la lista vacía temporalmente para que, cuando no haya mensajes en la BD,
-        // el chat se muestre limpio y vacío en el Front-end.
-        
+    public ResponseEntity<List<ChatMessage>> obtenerHistorial(@PathVariable("salaId") Long salaId) {
+        Long idSala = Objects.requireNonNull(salaId);
+        List<ChatMessage> historial = chatService.obtenerHistorial(idSala);
         return ResponseEntity.ok(historial);
     }
 }
 
-// --- DTOs temporales de soporte ---
 class SalaRequest {
-    private String compradorId; private String vendedorId;
-    public String getCompradorId() { return compradorId; } public String getVendedorId() { return vendedorId; }
-}
-class SalaResponse {
-    private Long id; private String compradorId; private String vendedorId;
-    public SalaResponse(Long id, String c, String v) { this.id = id; this.compradorId = c; this.vendedorId = v; }
-    public Long getId() { return id; } public String getCompradorId() { return compradorId; } public String getVendedorId() { return vendedorId; }
-}
-class UserMock {
-    private String id; private String nombreUsuario; private String rol;
-    public UserMock(String id, String n, String r) { this.id = id; this.nombreUsuario = n; this.rol = r; }
-    public String getId() { return id; } public String getNombreUsuario() { return nombreUsuario; } public String getRol() { return rol; }
-}
-class SalaCompletaResponse {
-    private Long id; private UserMock comprador; private UserMock vendedor;
-    public SalaCompletaResponse(Long id, UserMock c, UserMock v) { this.id = id; this.comprador = c; this.vendedor = v; }
-    public Long getId() { return id; } public UserMock getComprador() { return comprador; } public UserMock getVendedor() { return vendedor; }
-}
-class MensajeMock {
-    private Long salaId; private String remitenteId; private String contenido; private String fechaEnvio;
-    public MensajeMock(Long s, String r, String c, String f) { this.salaId = s; this.remitenteId = r; this.contenido = c; this.fechaEnvio = f; }
-    public Long getSalaId() { return salaId; } public String getRemitenteId() { return remitenteId; } public String getContenido() { return contenido; } public String getFechaEnvio() { return fechaEnvio; }
+    private String compradorId;
+    private String vendedorId;
+    private Long postId;
+
+    public String getCompradorId() { return compradorId; }
+    public void setCompradorId(String compradorId) { this.compradorId = compradorId; }
+    public String getVendedorId() { return vendedorId; }
+    public void setVendedorId(String vendedorId) { this.vendedorId = vendedorId; }
+    public Long getPostId() { return postId; }
+    public void setPostId(Long postId) { this.postId = postId; }
 }

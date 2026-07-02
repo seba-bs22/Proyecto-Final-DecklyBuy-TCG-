@@ -188,7 +188,8 @@ const Contact = () => {
   };
 
   return (
-    <main className="zona-faq">
+    /* 🛠️ AJUSTE: Limitamos el ancho de la zona del FAQ y añadimos margin auto para centrarla en la pantalla */
+    <main className="zona-faq" style={{ maxWidth: '950px', margin: '40px auto', padding: '0 20px', width: '100%', boxSizing: 'border-box' }}>
       <section className="faq-header">
         <h1>Preguntas frecuentes</h1>
         <p>
@@ -209,6 +210,7 @@ const Contact = () => {
             <button
               className="faq-pregunta"
               onClick={() => togglePregunta(item.id)}
+              style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
             >
               <span>{item.pregunta}</span>
               <span className="faq-icono">

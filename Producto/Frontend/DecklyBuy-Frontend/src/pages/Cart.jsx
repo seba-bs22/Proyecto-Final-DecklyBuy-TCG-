@@ -7,7 +7,8 @@ const Cart = () => {
   const [cartData, setCartData] = useState(null);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
-  const [pagando, setPagando] = useState(false); // <-- Estado para Mercado Pago
+  const [pagando, setPagando] = useState(false); 
+  const [modal, setModal] = useState(null); // <-- Estado de tu modal agregado
   const navigate = useNavigate();
 
   const obtenerCarrito = async () => {
@@ -56,8 +57,12 @@ const Cart = () => {
         ...prev,
         items: prev.items.filter(item => item.id !== cartItemId)
       }));
+      
+      // Modal opcional de éxito al remover si lo deseas:
+      setModal({ valid: true, mensaje: "Producto eliminado del carrito correctamente." });
     } catch (err) {
-      alert(err.message);
+      // Reemplazado alert por tu modal estético
+      setModal({ valid: false, mensaje: err.message });
     }
   };
 
@@ -77,7 +82,6 @@ const Cart = () => {
     }, 0);
   };
 
-  // Lógica unificada para procesar el pago real-simulado
   const handleCheckout = async () => {
     const total = getCartTotal();
     if (total <= 0) return;
@@ -85,26 +89,26 @@ const Cart = () => {
     try {
       setPagando(true);
       
-      // Conexión con tu backend de Spring Boot
       const response = await fetch("https://localhost:8080/api/mercadopago/crear-preferencia", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ total: Number(total) }) // Nos aseguramos de que viaje como número estricto
+        body: JSON.stringify({ total: Number(total) }) 
       });
 
       const data = await response.json();
 
       if (data.url) {
-        // Redirección directa al Sandbox de Mercado Pago
         window.location.href = data.url;
       } else {
-        alert("No se pudo generar la pasarela de pago.");
+        // Reemplazado alert por tu modal estético
+        setModal({ valid: false, mensaje: "No se pudo generar la pasarela de pago." });
       }
     } catch (err) {
       console.error("Error al conectar con Mercado Pago:", err);
-      alert("Hubo un error de red al intentar procesar el pago.");
+      // Reemplazado alert por tu modal estético
+      setModal({ valid: false, mensaje: "Hubo un error de red al intentar procesar el pago." });
     } finally {
       setPagando(false);
     }
@@ -197,6 +201,19 @@ const Cart = () => {
           {pagando ? "Conectando a Mercado Pago..." : "Proceder al Pago"}
         </button>
       </div>
+
+      {/* Inyección exacta de tu HTML modal personalizado */}
+      {modal && (
+        <div className="modal-analisis">
+          <div className="modal-contenido">
+            <div className={modal.valid ? "modal-icono ok" : "modal-icono error"}>
+              {modal.valid ? "✓" : "✕"}
+            </div>
+            <p>{modal.mensaje}</p>
+            <button onClick={() => setModal(null)}>Aceptar</button>
+          </div>
+        </div>
+      )}
 
     </div>
   );

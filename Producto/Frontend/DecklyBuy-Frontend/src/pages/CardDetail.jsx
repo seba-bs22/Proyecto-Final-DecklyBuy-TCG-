@@ -57,6 +57,7 @@ const CardDetail = () => {
   const [ofertasOriginales, setOfertasOriginales] = useState([]);
   const [loading, setLoading] = useState(true);
   const [wishlist, setWishlist] = useState({});
+  const [modal, setModal] = useState(null); // <-- Estado de tu modal agregado
 
   const [filtroIdioma, setFiltroIdioma] = useState("TODOS");
   const [filtroEstado, setFiltroEstado] = useState("TODOS");
@@ -133,20 +134,29 @@ const CardDetail = () => {
           method: "DELETE",
           credentials: "include"
         });
-        if (response.ok) setWishlist(prev => ({ ...prev, [postId]: false }));
-        else if (response.status === 401) alert("Debes iniciar sesión para modificar tu lista de deseos.");
-        else alert("No se pudo quitar de la lista de deseos.");
+        if (response.ok) {
+          setWishlist(prev => ({ ...prev, [postId]: false }));
+        } else if (response.status === 401) {
+          setModal({ valid: false, mensaje: "Debes iniciar sesión para modificar tu lista de deseos." });
+        } else {
+          setModal({ valid: false, mensaje: "No se pudo quitar de la lista de deseos." });
+        }
       } else {
         const response = await fetch(`https://localhost:8080/api/wishlist/add/${postId}`, {
           method: "POST",
           credentials: "include"
         });
-        if (response.ok) setWishlist(prev => ({ ...prev, [postId]: true }));
-        else if (response.status === 401) alert("Por favor, inicia sesión para añadir cartas a tu lista de deseos.");
-        else alert("No se pudo agregar a la lista de deseos.");
+        if (response.ok) {
+          setWishlist(prev => ({ ...prev, [postId]: true }));
+        } else if (response.status === 401) {
+          setModal({ valid: false, mensaje: "Por favor, inicia sesión para añadir cartas a tu lista de deseos." });
+        } else {
+          setModal({ valid: false, mensaje: "No se pudo agregar a la lista de deseos." });
+        }
       }
     } catch (error) {
       console.error("Error al conectar con el endpoint de la lista de deseos:", error);
+      setModal({ valid: false, mensaje: "Error de red al conectar con tu lista de deseos." });
     }
   }, [wishlist]);
 
@@ -156,11 +166,16 @@ const CardDetail = () => {
         method: "POST",
         credentials: "include"
       });
-      if (response.ok) alert("¡Carta añadida al carrito con éxito! 🛒");
-      else if (response.status === 401) alert("Por favor, inicia sesión para añadir productos al carrito.");
-      else alert("No se pudo añadir al carrito. Puede que no quede stock disponible.");
+      if (response.ok) {
+        setModal({ valid: true, mensaje: "¡Carta añadida al carrito con éxito! 🛒" });
+      } else if (response.status === 401) {
+        setModal({ valid: false, mensaje: "Por favor, inicia sesión para añadir productos al carrito." });
+      } else {
+        setModal({ valid: false, mensaje: "No se pudo añadir al carrito. Puede que no quede stock disponible." });
+      }
     } catch (error) {
       console.error("Error al añadir al carrito:", error);
+      setModal({ valid: false, mensaje: "No se pudo conectar con el servidor." });
     }
   }, []);
 
@@ -406,13 +421,6 @@ const CardDetail = () => {
                             Ver detalles
                           </button>
 
-                          <button 
-                            onClick={() => navigate(`/checkout/${oferta.id}`)}
-                            style={estilos.btnPrimary}
-                          >
-                            Comprar
-                          </button>
-
                         </div>
                       </td>
 
@@ -425,6 +433,18 @@ const CardDetail = () => {
         )}
       </section>
 
+      {/* Inyección de tu modal con estilos CSS personalizados */}
+      {modal && (
+        <div className="modal-analisis">
+          <div className="modal-contenido">
+            <div className={modal.valid ? "modal-icono ok" : "modal-icono error"}>
+              {modal.valid ? "✓" : "✕"}
+            </div>
+            <p>{modal.mensaje}</p>
+            <button onClick={() => setModal(null)}>Aceptar</button>
+          </div>
+        </div>
+      )}
     </main>
   );
 };
@@ -479,8 +499,7 @@ const estilos = {
   actionsContainer: { display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" },
   btnWishlistBase: { borderRadius: "6px", padding: "8px 10px", cursor: "pointer", fontSize: "14px", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s" },
   btnCart: { background: "#f1f5f9", border: "1px solid #cbd5e1", borderRadius: "6px", padding: "8px 12px", cursor: "pointer", fontSize: "14px", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s" },
-  btnSecondary: { background: "#f1f5f9", color: "#334155", border: "1px solid #cbd5e1", padding: "8px 14px", borderRadius: "6px", fontWeight: "600", cursor: "pointer", fontSize: "13px", transition: "all 0.2s" },
-  btnPrimary: { background: "#2563eb", color: "#fff", border: "none", padding: "8px 16px", borderRadius: "6px", fontWeight: "600", cursor: "pointer", fontSize: "13px" }
+  btnSecondary: { background: "#f1f5f9", color: "#334155", border: "1px solid #cbd5e1", padding: "8px 14px", borderRadius: "6px", fontWeight: "600", cursor: "pointer", fontSize: "13px", transition: "all 0.2s" }
 };
 
 export default CardDetail;

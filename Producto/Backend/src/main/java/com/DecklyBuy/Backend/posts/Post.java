@@ -20,6 +20,10 @@ public class Post {
     @Positive(message = "El precio debe ser mayor a 0")
     private Double precio;
 
+    // --- NUEVO CAMPO PARA EL PRECIO DE REFERENCIA ---
+    @Column(name = "precio_original")
+    private Double precioOriginal;
+
     private String estadoDetectado;
     private Integer score;
     private Double confidence;
@@ -54,6 +58,12 @@ public class Post {
     @PrePersist
     public void prePersist() {
         this.fechaPublicacion = LocalDateTime.now();
+        
+        // PARA PUBLICACIONES NUEVAS: Asigna el precio original automáticamente al crearse
+        if (this.precioOriginal == null) {
+            this.precioOriginal = this.precio;
+        }
+
         if (this.card != null) {
             this.card.setCategoriaCarta(this.categoriaCarta);
         }
@@ -66,11 +76,25 @@ public class Post {
         }
     }
 
+    // --- PARA PUBLICACIONES ANTIGUAS ---
+    // Cada vez que JPA cargue una fila vieja de la BD, si 'precio_original' está vacío,
+    // le duplicará temporalmente en memoria el precio actual de la carta.
+    @PostLoad
+    public void postLoad() {
+        if (this.precioOriginal == null) {
+            this.precioOriginal = this.precio;
+        }
+    }
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
     public Double getPrecio() { return precio; }
     public void setPrecio(Double precio) { this.precio = precio; }
+
+    // GETTER Y SETTER DEL NUEVO CAMPO
+    public Double getPrecioOriginal() { return precioOriginal; }
+    public void setPrecioOriginal(Double precioOriginal) { this.precioOriginal = precioOriginal; }
 
     public String getEstadoDetectado() { return estadoDetectado; }
     public void setEstadoDetectado(String estadoDetectado) { this.estadoDetectado = estadoDetectado; }

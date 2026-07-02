@@ -20,6 +20,8 @@ const PostDetail = () => {
   const [post, setPost] = useState(null);
   const [loading, setLoading] = useState(true);
   const [enviandoChat, setEnviandoChat] = useState(false);
+  const [pagando, setPagando] = useState(false); // ⚡ Estado para la compra directa
+  const [agregandoCarrito, setAgregandoCarrito] = useState(false); // 🛒 Estado para añadir al carrito
 
   useEffect(() => {
     const fetchPostDetail = async () => {
@@ -48,23 +50,20 @@ const PostDetail = () => {
   }, [id, navigate]);
 
   const handleContactarVendedor = async () => {
-    if (enviandoChat) return; // Protección extra
+    if (enviandoChat) return; 
     
     setEnviandoChat(true);
     try {
-      // 1. Obtener los datos del comprador de forma segura
       const authRespuesta = await fetch('https://localhost:8080/api/auth/me', {
         method: 'GET',
         credentials: 'include'
       });
       
       if (!authRespuesta.ok) {
-        throw new Error("No se pudo verificar la sesión. Asegúrate de estar logueado.");
+        throw new Error("Debes iniciar sesión para contactar al vendedor.");
       }
       const authData = await authRespuesta.json();
       const compradorId = authData?.user?.id;
-
-      // 2. Obtener el ID del vendedor desde el post cargado
       const vendedorId = post?.data?.userId || post?.userId || post?.user?.id || post?.vendedor?.id;
 
       if (!compradorId || !vendedorId) {
@@ -72,13 +71,11 @@ const PostDetail = () => {
         return;
       }
 
-      // Evitar que el usuario inicie un chat consigo mismo
       if (compradorId === vendedorId) {
         alert("Esta publicación es tuya. ¡No puedes chatear contigo mismo!");
         return;
       }
 
-      // 3. Crear o recuperar la sala en Spring Boot
       const respuesta = await fetch('https://localhost:8080/api/chat/sala', {
         method: 'POST',
         headers: {
@@ -86,7 +83,11 @@ const PostDetail = () => {
           'Accept': 'application/json'
         },
         credentials: 'include',
-        body: JSON.stringify({ compradorId, vendedorId })
+        body: JSON.stringify({ 
+          compradorId, 
+          vendedorId,
+          postId: Number(id) 
+        })
       });
 
       if (!respuesta.ok) {
@@ -95,9 +96,6 @@ const PostDetail = () => {
       }
 
       const sala = await respuesta.json();
-      console.log("¡Sala lista en la base de datos!", sala);
-      
-      // 4. Redirección automática a tu pantalla de mensajes pasando el ID de la sala
       navigate(`/messages?salaId=${sala.id}`);
 
     } catch (error) {
@@ -105,6 +103,66 @@ const PostDetail = () => {
       alert(`No se pudo conectar al chat: ${error.message}`);
     } finally {
       setEnviandoChat(false);
+    }
+  };
+
+  // 🛒 AGREGAR AL CARRITO (Corregido para usar la ruta con parámetro /add/${postId})
+  const handleAgregarAlCarrito = async () => {
+    if (agregandoCarrito) return;
+    setAgregandoCarrito(true);
+
+    try {
+      const response = await fetch(`https://localhost:8080/api/cart/add/${id}`, {
+        method: "POST",
+        credentials: "include"
+      });
+
+      if (response.ok) {
+        alert("¡Carta añadida al carrito con éxito! 🛒");
+      } else if (response.status === 401) {
+        alert("Por favor, inicia sesión para añadir productos al carrito.");
+        navigate("/login");
+      } else {
+        alert("No se pudo añadir al carrito. Puede que no quede stock disponible o la publicación ya no exista.");
+      }
+    } catch (error) {
+      console.error("Error al añadir al carrito:", error);
+      alert("Hubo un error de red al intentar añadir al carrito.");
+    } finally {
+      setAgregandoCarrito(false);
+    }
+  };
+
+  // ⚡ COMPRA DIRECTA: Mapeado exactamente igual que tu componente Cart
+  const handleCompraDirecta = async () => {
+    const total = post?.precio || 0;
+    if (total <= 0) return;
+
+    try {
+      setPagando(true);
+      
+      const response = await fetch("https://localhost:8080/api/mercadopago/crear-preferencia", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include", // Incluido por si tu backend requiere sesión aquí también
+        body: JSON.stringify({ total: Number(total) }) 
+      });
+
+      const data = await response.json();
+
+      if (data.url) {
+        // Redirección directa al Sandbox/Pasarela de Mercado Pago
+        window.location.href = data.url;
+      } else {
+        alert("No se pudo generar la pasarela de pago.");
+      }
+    } catch (err) {
+      console.error("Error al conectar con Mercado Pago:", err);
+      alert("Hubo un error de red al intentar procesar el pago.");
+    } finally {
+      setPagando(false);
     }
   };
 
@@ -154,8 +212,38 @@ const PostDetail = () => {
           <p style={estilos.subtitle}>Edición: <strong>{cardEdition}</strong> (#{cardNumero})</p>
 
           <div style={estilos.priceBox}>
-            <span style={{ fontSize: "13px", color: "#991b1b", fontWeight: "600", display: "block", marginBottom: "4px" }}>Precio de Venta</span>
-            <span style={{ fontSize: "2rem", fontWeight: "800", color: "#b91c1c" }}>{formatCLP(post.precio)}</span>
+            <div style={{ flex: "1", minWidth: "140px" }}>
+              <span style={{ fontSize: "13px", color: "#991b1b", fontWeight: "600", display: "block", marginBottom: "4px" }}>Precio de Venta</span>
+              <span style={{ fontSize: "2rem", fontWeight: "800", color: "#b91c1c" }}>{formatCLP(post.precio)}</span>
+            </div>
+            
+            {/* 🛠️ PANEL DE ACCIÓN: Botones de Carrito y Compra Directa alineados */}
+            <div style={estilos.actionButtonGroup}>
+              <button 
+                onClick={handleAgregarAlCarrito}
+                disabled={agregandoCarrito}
+                style={{
+                  ...estilos.btnCart,
+                  backgroundColor: agregandoCarrito ? "#cbd5e1" : "#f1f5f9",
+                  color: agregandoCarrito ? "#94a3b8" : "#0f172a",
+                  cursor: agregandoCarrito ? "not-allowed" : "pointer"
+                }}
+              >
+                {agregandoCarrito ? "🛒 Añadiendo..." : "🛒 Agregar al Carrito"}
+              </button>
+
+              <button 
+                onClick={handleCompraDirecta}
+                disabled={pagando}
+                style={{
+                  ...estilos.btnCheckoutDirect,
+                  backgroundColor: pagando ? "#64748b" : "#16a34a",
+                  cursor: pagando ? "not-allowed" : "pointer"
+                }}
+              >
+                {pagando ? "Conectando..." : "⚡ Comprar Ahora"}
+              </button>
+            </div>
           </div>
 
           <div style={{ marginBottom: "28px" }}>
@@ -224,7 +312,7 @@ const PostDetail = () => {
                 cursor: enviandoChat ? "not-allowed" : "pointer"
               }}
             >
-              {enviandoChat ? "⏳ Creando sala..." : "💬 Chat Interno"}
+              {enviandoChat ? "⏳ Creando sala..." : "💬 Contactar al Vendedor"}
             </button>
           </div>
         </div>
@@ -242,7 +330,10 @@ const estilos = {
   badgeCondition: { fontSize: "11px", fontWeight: "700", color: "#1e293b", background: "#fef9c3", padding: "4px 8px", borderRadius: "4px" },
   mainTitle: { fontSize: "2.2rem", fontWeight: "800", color: "#0f172a", margin: "0 0 8px 0" },
   subtitle: { fontSize: "15px", color: "#64748b", margin: "0 0 24px 0" },
-  priceBox: { background: "#fef2f2", padding: "16px 20px", borderRadius: "12px", border: "1px solid #fee2e2", marginBottom: "24px" },
+  priceBox: { background: "#fef2f2", padding: "20px", borderRadius: "12px", border: "1px solid #fee2e2", marginBottom: "24px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "20px" },
+  actionButtonGroup: { display: "flex", gap: "10px", flex: "2", justifyContent: "flex-end", minWidth: "280px" },
+  btnCart: { padding: "12px 16px", borderRadius: "8px", fontWeight: "bold", border: "1px solid #cbd5e1", fontSize: "14px", transition: "all 0.2s", flex: "1" },
+  btnCheckoutDirect: { color: "#fff", padding: "12px 20px", border: "none", borderRadius: "8px", fontWeight: "bold", fontSize: "14px", transition: "all 0.2s", flex: "1" },
   sectionTitle: { fontSize: "15px", color: "#0f172a", fontWeight: "700", margin: "0 0 12px 0" },
   descriptionText: { fontSize: "14px", color: "#334155", lineHeight: "1.6", background: "#f8fafc", padding: "16px", borderRadius: "12px", border: "1px solid #e2e8f0", margin: 0, whiteSpace: "pre-line" },
   row: { display: "flex", justifyContent: "space-between", borderBottom: "1px solid #f1f5f9", paddingBottom: "6px" },

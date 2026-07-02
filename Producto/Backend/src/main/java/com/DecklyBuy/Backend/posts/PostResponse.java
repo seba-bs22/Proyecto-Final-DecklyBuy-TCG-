@@ -11,6 +11,7 @@ public record PostResponse(
         String numero,         
         String cardImage,      
         Double precio,
+        Double precioOriginal, // <-- 1. Agregado aquí en la firma del Record
         String estadoDetectado,
         Integer score,
         Double confidence,
@@ -33,6 +34,7 @@ public record PostResponse(
             post.getCard() != null ? post.getCard().getLocalId() : null,
             post.getCard() != null ? post.getCard().getImage() : null,
             post.getPrecio(),
+            post.getPrecioOriginal(), // <-- 2. Mapeado aquí desde la entidad
             post.getEstadoDetectado(),
             post.getScore(),
             post.getConfidence(),

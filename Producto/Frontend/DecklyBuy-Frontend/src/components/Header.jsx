@@ -1,12 +1,16 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
 import { useCart } from '../context/CartContext'; 
+import { Client } from '@stomp/stompjs'; // 🔔 Importamos el cliente STOMP
 
 const Header = () => {
   const [open, setOpen] = useState(false);
   const [busqueda, setBusqueda] = useState("");
   const [sugerencias, setSugerencias] = useState([]); 
   const [mostrarSugerencias, setMostrarSugerencias] = useState(false); 
+  
+  // 🔔 ESTADO REAL: Cambiamos el dato estático por un booleano reactivo
+  const [tieneMensajesNoLeidos, setTieneMensajesNoLeidos] = useState(false);
   
   const { getCartCount } = useCart(); 
   
@@ -19,7 +23,43 @@ const Header = () => {
   const userName = storedUser?.nombreUsuario || storedUser?.nombre || storedUser?.name || "Invitado";
   const userImage = storedUser?.fotoPerfil || storedUser?.picture || "/user.png";
 
-  const mensajesNoLeidos = 2; 
+  // 🔔 EFECTO 1: Si el usuario entra a ver sus mensajes, apagamos el puntito automáticamente
+  useEffect(() => {
+    if (location.pathname === "/messages") {
+      setTieneMensajesNoLeidos(false);
+    }
+  }, [location.pathname]);
+
+  // 🔔 EFECTO 2: Conexión al WebSocket de notificaciones globales en segundo plano
+  useEffect(() => {
+    // Si no hay usuario logueado o ya estamos en la pantalla de mensajes, no iniciamos suscripción
+    if (!storedUser?.id || location.pathname === "/messages") return;
+
+    const client = new Client({
+      brokerURL: 'wss://localhost:8080/ws',
+      reconnectDelay: 5000,
+      webSocketFactory: () => new WebSocket('wss://localhost:8080/ws'),
+      onConnect: () => {
+        console.log("🔔 Conectado al canal de notificaciones globales.");
+        
+        // Sintonizamos el canal personal usando el ID del usuario logueado
+        client.subscribe(`/topic/notificaciones/${storedUser.id}`, (message) => {
+          if (message.body === "NUEVO_MENSAJE") {
+            setTieneMensajesNoLeidos(true); // ¡Pintamos el puntito en tiempo real!
+          }
+        });
+      },
+      onStompError: (frame) => {
+        console.error('Error en WebSocket de notificaciones:', frame.headers['message']);
+      }
+    });
+
+    client.activate();
+
+    return () => {
+      client.deactivate(); // Desconectamos limpiamente al desmontar el componente
+    };
+  }, [location.pathname, storedUser?.id]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -110,7 +150,7 @@ const Header = () => {
     <header style={styles.header}>
       <div className="bloque-buscador" style={styles.bloqueBuscador}>
 
-        {/* 1. BUSCADOR (Mismo tamaño) */}
+        {/* 1. BUSCADOR */}
         <div className="buscador-container" ref={buscadorRef} style={styles.buscadorContainer}>
           <div style={styles.searchWrapper}>
             <div style={styles.searchIconLeft}>
@@ -134,7 +174,6 @@ const Header = () => {
             />
           </div>
 
-          {/* DESPLEGABLE FLOTANTE DE SUGERENCIAS */}
           {mostrarSugerencias && sugerencias.length > 0 && (
             <div className="sugerencias-dropdown" style={styles.sugerenciasDropdown}>
               {sugerencias.map((post) => (
@@ -168,7 +207,7 @@ const Header = () => {
         {/* 3. ACCIONES A LA DERECHA */}
         <div style={styles.rightActions}>
           
-          {/* BOTÓN DE MENSAJES */}
+          {/* BOTÓN DE MENSAJES MODIFICADO */}
           <Link 
             to="/messages" 
             style={styles.iconButton}
@@ -184,8 +223,10 @@ const Header = () => {
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#475569" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
             </svg>
-            {mensajesNoLeidos > 0 && (
-              <span style={{ ...styles.badge, background: "#2563eb" }}>{mensajesNoLeidos}</span>
+            
+            {/* 🔔 Cambiado de número estático a puntito azul/notificación dinámico */}
+            {tieneMensajesNoLeidos && (
+              <span style={{ ...styles.badge, background: "#2563eb", width: "12px", height: "12px", top: "2px", right: "2px" }} />
             )}
           </Link>
 
@@ -259,7 +300,7 @@ const styles = {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    padding: "24px 40px", // 🚨 Modificado: Subió de 10px a 24px arriba y abajo. Esto genera el gap blanco más amplio y elegante.
+    padding: "24px 40px", 
     gap: "20px"
   },
   buscadorContainer: {

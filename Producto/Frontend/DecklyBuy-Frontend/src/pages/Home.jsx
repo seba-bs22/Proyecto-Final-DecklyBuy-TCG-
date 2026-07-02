@@ -110,9 +110,10 @@ const Home = () => {
                     </p>
                   </div>
                   
+                  {/* Regresamos el texto informativo del precio */}
                   <div style={estilos.footerRow}>
+                    <span style={estilos.priceLabel}>Desde:</span>
                     <span style={estilos.price}>{formatCLP(post.precio)}</span>
-                    <span style={estilos.scoreBadge}>⭐ IA: {post.score || 0}/10</span>
                   </div>
                 </div>
               </div>
@@ -141,8 +142,8 @@ const estilos = {
   cardTitle: { margin: "4px 0", fontSize: "16px", fontWeight: "700", color: "#0f172a", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" },
   subtitle: { color: "#64748b", margin: "0 0 12px 0", fontSize: "13px" },
   footerRow: { display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid #f1f5f9", paddingTop: "12px" },
-  price: { fontSize: "16px", fontWeight: "700", color: "#b91c1c" },
-  scoreBadge: { fontSize: "11px", fontWeight: "700", color: "#166534", background: "#dcfce7", padding: "4px 8px", borderRadius: "6px" }
+  priceLabel: { fontSize: "13px", color: "#64748b", fontWeight: "500" }, // Estilo para el label "Desde:"
+  price: { fontSize: "16px", fontWeight: "700", color: "#b91c1c" }
 };
 
 export default Home;

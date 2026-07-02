@@ -89,46 +89,29 @@ public class PostService {
     @Transactional
     public PostResponse updatePost(Long id, PostUpdateRequest request, UUID userId) {
         Objects.requireNonNull(id, "El id es obligatorio.");
-        if (request.card() == null || request.card().getId() == null) {
-            throw new RuntimeException("La información de la carta oficial es obligatoria.");
-        }
 
+        // 1. Buscamos el post actual directamente de la base de datos con todos sus datos originales
         Post post = postRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Post no encontrado"));
 
+        // 2. Control de seguridad: Validamos el dueño
         if (!post.getUser().getId().equals(userId)) {
             throw new RuntimeException("No tienes permisos para editar esta publicacion.");
         }
 
-        PostUpdateRequest.CardDto cardDto = request.card();
-        String cardId = Objects.requireNonNull(cardDto.getId(), "La información de la carta oficial es obligatoria.");
-        Card cardToAssociate = cardRepository.findById(cardId)
-                .orElseGet(() -> {
-                    Card newCard = new Card();
-                    newCard.setId(cardId);
-                    newCard.setName(cardDto.getName());
-                    newCard.setEdicion(cardDto.getEdicion());
-                    newCard.setLocalId(cardDto.getLocalId());
-                    newCard.setImage(cardDto.getImage());
-                    return cardRepository.save(newCard);
-                });
-
-        post.setPrecio(request.precio());
-        post.setScore(request.score());
-        post.setConfidence(request.confidence());
-        post.setEstadoDetectado(request.estadoDetectado());
-        post.setCategoriaCarta(request.categoriaCarta()); 
-        post.setDescripcion(request.descripcion());
-        post.setCard(cardToAssociate); 
-
-        if (request.idioma() != null && !request.idioma().isBlank()) {
-            post.setIdioma(request.idioma());
+        // 3. ACTUALIZACIÓN PARCIAL: Solo cambiamos el precio si viene en el request
+        if (request.precio() != null) {
+            post.setPrecio(request.precio());
         }
 
-        if (request.imagenUrl() != null && !request.imagenUrl().isBlank()) {
-            post.setImagenUrl(request.imagenUrl());
+        // 4. ACTUALIZACIÓN PARCIAL: Solo cambiamos la descripción si viene en el request
+        if (request.descripcion() != null && !request.descripcion().isBlank()) {
+            post.setDescripcion(request.descripcion());
         }
 
+        // --- TODO LO DEMÁS (card, score, confidence, idioma, etc.) SE QUEDA EXACTAMENTE IGUAL ---
+
+        // 5. Guardamos de forma segura sin peligro de pisar datos con nulos
         Post updated = postRepository.save(post);
         return new PostResponse(updated);
     }

@@ -12,13 +12,17 @@ public class ChatMessage {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    // 🛠️ MODIFICADO: Evitamos que el mensaje vuelva a serializar toda la sala en bucle
     @ManyToOne
     @JoinColumn(name = "chat_room_id", nullable = false)
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties({"comprador", "vendedor", "post"})
     private ChatRoom chatRoom;
 
+    // 🛠️ MODIFICADO: Evitamos que el remitente arrastre colecciones pesadas o perezosas
     @ManyToOne
     @JoinColumn(name = "remitente_id", nullable = false)
-    private User remitente; // Quién envió el mensaje
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties({"salas", "posts", "hibernateLazyInitializer", "handler"})
+    private User remitente;
 
     @Column(columnDefinition = "TEXT", nullable = false)
     private String contenido;
@@ -30,7 +34,6 @@ public class ChatMessage {
         this.fechaEnvio = LocalDateTime.now();
     }
 
-    // --- GETTERS Y SETTERS ---
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
