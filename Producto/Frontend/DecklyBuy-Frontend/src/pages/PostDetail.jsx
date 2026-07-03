@@ -22,6 +22,7 @@ const PostDetail = () => {
   const [enviandoChat, setEnviandoChat] = useState(false);
   const [pagando, setPagando] = useState(false); // ⚡ Estado para la compra directa
   const [agregandoCarrito, setAgregandoCarrito] = useState(false); // 🛒 Estado para añadir al carrito
+  const [modal, setModal] = useState(null); // <-- Estado de tu modal agregado
 
   useEffect(() => {
     const fetchPostDetail = async () => {
@@ -49,6 +50,13 @@ const PostDetail = () => {
     if (id) fetchPostDetail();
   }, [id, navigate]);
 
+  const handleModalClose = () => {
+    if (modal?.onClose) {
+      modal.onClose();
+    }
+    setModal(null);
+  };
+
   const handleContactarVendedor = async () => {
     if (enviandoChat) return; 
     
@@ -67,12 +75,18 @@ const PostDetail = () => {
       const vendedorId = post?.data?.userId || post?.userId || post?.user?.id || post?.vendedor?.id;
 
       if (!compradorId || !vendedorId) {
-        alert("Faltan identificadores para iniciar la conversación.");
+        setModal({
+          valid: false,
+          mensaje: "Faltan identificadores para iniciar la conversación."
+        });
         return;
       }
 
       if (compradorId === vendedorId) {
-        alert("Esta publicación es tuya. ¡No puedes chatear contigo mismo!");
+        setModal({
+          valid: false,
+          mensaje: "Esta publicación es tuya. ¡No puedes chatear contigo mismo!"
+        });
         return;
       }
 
@@ -100,13 +114,16 @@ const PostDetail = () => {
 
     } catch (error) {
       console.error("Error al gestionar el chat:", error);
-      alert(`No se pudo conectar al chat: ${error.message}`);
+      setModal({
+        valid: false,
+        mensaje: `No se pudo conectar al chat: ${error.message}`
+      });
     } finally {
       setEnviandoChat(false);
     }
   };
 
-  // 🛒 AGREGAR AL CARRITO (Corregido para usar la ruta con parámetro /add/${postId})
+  // 🛒 AGREGAR AL CARRITO
   const handleAgregarAlCarrito = async () => {
     if (agregandoCarrito) return;
     setAgregandoCarrito(true);
@@ -118,22 +135,34 @@ const PostDetail = () => {
       });
 
       if (response.ok) {
-        alert("¡Carta añadida al carrito con éxito! 🛒");
+        setModal({
+          valid: true,
+          mensaje: "¡Carta añadida al carrito con éxito! 🛒"
+        });
       } else if (response.status === 401) {
-        alert("Por favor, inicia sesión para añadir productos al carrito.");
-        navigate("/login");
+        setModal({
+          valid: false,
+          mensaje: "Por favor, inicia sesión para añadir productos al carrito.",
+          onClose: () => navigate("/login")
+        });
       } else {
-        alert("No se pudo añadir al carrito. Puede que no quede stock disponible o la publicación ya no exista.");
+        setModal({
+          valid: false,
+          mensaje: "No se pudo añadir al carrito. Puede que no quede stock disponible o la publicación ya no exista."
+        });
       }
     } catch (error) {
       console.error("Error al añadir al carrito:", error);
-      alert("Hubo un error de red al intentar añadir al carrito.");
+      setModal({
+        valid: false,
+        mensaje: "Hubo un error de red al intentar añadir al carrito."
+      });
     } finally {
       setAgregandoCarrito(false);
     }
   };
 
-  // ⚡ COMPRA DIRECTA: Mapeado exactamente igual que tu componente Cart
+  // ⚡ COMPRA DIRECTA
   const handleCompraDirecta = async () => {
     const total = post?.precio || 0;
     if (total <= 0) return;
@@ -146,21 +175,26 @@ const PostDetail = () => {
         headers: {
           "Content-Type": "application/json",
         },
-        credentials: "include", // Incluido por si tu backend requiere sesión aquí también
+        credentials: "include", 
         body: JSON.stringify({ total: Number(total) }) 
       });
 
       const data = await response.json();
 
       if (data.url) {
-        // Redirección directa al Sandbox/Pasarela de Mercado Pago
         window.location.href = data.url;
       } else {
-        alert("No se pudo generar la pasarela de pago.");
+        setModal({
+          valid: false,
+          mensaje: "No se pudo generar la pasarela de pago."
+        });
       }
     } catch (err) {
       console.error("Error al conectar con Mercado Pago:", err);
-      alert("Hubo un error de red al intentar procesar el pago.");
+      setModal({
+        valid: false,
+        mensaje: "Hubo un error de red al intentar procesar el pago."
+      });
     } finally {
       setPagando(false);
     }
@@ -217,7 +251,7 @@ const PostDetail = () => {
               <span style={{ fontSize: "2rem", fontWeight: "800", color: "#b91c1c" }}>{formatCLP(post.precio)}</span>
             </div>
             
-            {/* 🛠️ PANEL DE ACCIÓN: Botones de Carrito y Compra Directa alineados */}
+            {/* PANEL DE ACCIÓN */}
             <div style={estilos.actionButtonGroup}>
               <button 
                 onClick={handleAgregarAlCarrito}
@@ -317,6 +351,19 @@ const PostDetail = () => {
           </div>
         </div>
       </div>
+
+      {/* Renderizado del Modal Estético */}
+      {modal && (
+        <div className="modal-analisis">
+          <div className="modal-contenido">
+            <div className={modal.valid ? "modal-icono ok" : "modal-icono error"}>
+              {modal.valid ? "✓" : "✕"}
+            </div>
+            <p>{modal.mensaje}</p>
+            <button onClick={handleModalClose}>Aceptar</button>
+          </div>
+        </div>
+      )}
     </main>
   );
 };
